@@ -9,7 +9,7 @@ replace (
 
 require (
 	github.com/diadata-org/diadata v1.4.0
-	github.com/gin-gonic/gin v1.7.2
+	github.com/gin-gonic/gin v1.7.7
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/sirupsen/logrus v1.8.1
 	k8s.io/api v0.21.3
