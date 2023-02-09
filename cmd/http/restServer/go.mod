@@ -7,7 +7,7 @@ require (
 	github.com/diadata-org/diadata v1.4.1-rc-325
 	github.com/gin-contrib/cache v1.1.0
 	github.com/gin-gonic/contrib v0.0.0-20201101042839-6a891bf89f19
-	github.com/gin-gonic/gin v1.7.2
+	github.com/gin-gonic/gin v1.7.7
 	github.com/sirupsen/logrus v1.8.1
 	github.com/ugorji/go v1.1.13 // indirect
 )
