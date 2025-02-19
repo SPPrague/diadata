@@ -8,6 +8,20 @@
       "Address": "0x0000000000000000000000000000000000000000"
     },
     {
+      "Symbol": "SATS",
+      "Name": "sats",
+      "Decimals": 18,
+      "Blockchain": "Bitcoin",
+      "Address": "9b664bdd6f5ed80d8d88957b63364c41f3ad4efb8eee11366aa16435974d9333i0"
+    },
+    {
+      "Symbol": "ORDI",
+      "Name": "ordi",
+      "Decimals": 18,
+      "Blockchain": "Bitcoin",
+      "Address": "b61b0172d95e266c18aea0c624db987e971a5d6d4ebc2aaed85da4642d635735i0"
+    },
+    {
       "Symbol": "ADA",
       "Name": "Cardano",
       "Decimals": 6,
@@ -39,7 +53,21 @@
       "Symbol": "XRP",
       "Name": "XRP",
       "Decimals": 6,
-      "Blockchain": "Ripple",
+      "Blockchain": "XRPL",
+      "Address": "0x0000000000000000000000000000000000000000"
+    },
+    {
+      "Symbol": "RLUSD",
+      "Name": "Ripple USD",
+      "Decimals": 9,
+      "Blockchain": "XRPL",
+      "Address": "rMxCKbEDwqr76QuheSUMdEGf4B9xJ8m5De"
+    },
+    {
+      "Symbol": "IMX",
+      "Name": "IMX",
+      "Decimals": 18,
+      "Blockchain": "Immutable",
       "Address": "0x0000000000000000000000000000000000000000"
     },
     {
@@ -552,6 +580,153 @@
       "Decimals": 18,
       "Blockchain": "Wanchain",
       "Address": "0x0000000000000000000000000000000000000000"
+    },
+    {
+      "Symbol": "BNC",
+      "Name": "Bifrost",
+      "Decimals": 12,
+      "Blockchain": "Bifrost",
+      "Address": "0"
+    },
+    {
+      "Symbol": "vBNC",
+      "Name": "Voucher BNC",
+      "Decimals": 12,
+      "Blockchain": "Bifrost",
+      "Address": "257"
+    },
+    {
+      "Symbol": "MOVR",
+      "Name": "Moonriver Native Token",
+      "Decimals": 18,
+      "Blockchain": "Bifrost",
+      "Address": "522"
+    },
+    {
+      "Symbol": "vMOVR",
+      "Name": "Voucher MOVR",
+      "Decimals": 18,
+      "Blockchain": "Bifrost",
+      "Address": "266"
+    },
+    {
+      "Symbol": "KSM",
+      "Name": "Kusama",
+      "Decimals": 12,
+      "Blockchain": "Bifrost",
+      "Address": "516"
+    },
+    {
+      "Symbol": "vKSM",
+      "Name": "Voucher KSM",
+      "Decimals": 12,
+      "Blockchain": "Bifrost",
+      "Address": "260"
+    },
+    {
+      "Symbol": "vsKSM",
+      "Name": "vsKusama",
+      "Decimals": 12,
+      "Blockchain": "Bifrost",
+      "Address": "1028"
+    },
+    {
+      "Symbol": "USDT",
+      "Name": "Tether USD",
+      "Decimals": 6,
+      "Blockchain": "Bifrost",
+      "Address": "2048"
+    },
+    {
+      "Symbol": "ZLK",
+      "Name": "Zenlink",
+      "Decimals": 18,
+      "Blockchain": "Bifrost",
+      "Address": "519"
+    },
+    {
+      "Symbol": "kBTC",
+      "Name": "kintsugiBTC",
+      "Decimals": 8,
+      "Blockchain": "Bifrost",
+      "Address": "2050"
+    },
+    {
+      "Symbol": "KAR",
+      "Name": "Karura",
+      "Decimals": 12,
+      "Blockchain": "Bifrost",
+      "Address": "518"
+    },
+    {
+      "Symbol": "PHA",
+      "Name": "Phala Native Token",
+      "Decimals": 12,
+      "Blockchain": "Bifrost",
+      "Address": "520"
+    },
+    {
+      "Symbol": "RMRK",
+      "Name": "RMRK Token",
+      "Decimals": 10,
+      "Blockchain": "Bifrost",
+      "Address": "521"
+    },
+    {
+      "Symbol": "BNC",
+      "Name": "Bifrost",
+      "Decimals": 12,
+      "Blockchain": "Bifrost-polkadot",
+      "Address": "0"
+    },
+    {
+      "Symbol": "DOT",
+      "Name": "Polkadot",
+      "Decimals": 10,
+      "Blockchain": "Bifrost-polkadot",
+      "Address": "2048"
+    },
+    {
+      "Symbol": "vDOT",
+      "Name": "Voucher DOT",
+      "Decimals": 10,
+      "Blockchain": "Bifrost-polkadot",
+      "Address": "2304"
+    },
+    {
+      "Symbol": "vsDOT",
+      "Name": "vsDOT",
+      "Decimals": 10,
+      "Blockchain": "Bifrost-polkadot",
+      "Address": "2560"
+    },
+    {
+      "Symbol": "GLMR",
+      "Name": "Moonriver",
+      "Decimals": 18,
+      "Blockchain": "Bifrost-polkadot",
+      "Address": "2049"
+    },
+    {
+      "Symbol": "FIL",
+      "Name": "Filecoin Network Token",
+      "Decimals": 18,
+      "Blockchain": "Bifrost-polkadot",
+      "Address": "2052"
+    },
+    {
+      "Symbol": "vGLMR",
+      "Name": "vGLMR",
+      "Decimals": 18,
+      "Blockchain": "Bifrost-polkadot",
+      "Address": "2305"
+    },
+    {
+      "Symbol": "vFIL",
+      "Name": "vFIL",
+      "Decimals": 18,
+      "Blockchain": "Bifrost-polkadot",
+      "Address": "2308"
     }
   ]
 }

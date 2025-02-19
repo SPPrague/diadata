@@ -13,10 +13,11 @@ async function collateralCurrencies(api) {
       let key = collateralCurrencie[0].toHuman();
       let value = collateralCurrencie[1].toHuman();
       // TODO filter only ibtc as wrapped {"collateral":{"Token":"DOT"},"wrapped":{"Token":"IBTC"}}
-      // console.log("key",key[0].collateral.Token);
+      console.log("key",JSON.stringify(key[0].collateral));
       // console.log("value",JSON.stringify(value));
+      
   
-      collateralCurrenciesmap.set(key[0].collateral.Token, value);
+      collateralCurrenciesmap.set(JSON.stringify(key[0].collateral), value);
     });
     return collateralCurrenciesmap;
   }
@@ -31,8 +32,7 @@ async function collateralCurrencies(api) {
     totalUserVaultCollaterals.map((totalUserVaultCollateral) => {
       let key = totalUserVaultCollateral[0].toHuman();
       let value = totalUserVaultCollateral[1].toHuman();
-  
-      totalUserVaultCollateralsmap.set(key[0].collateral.Token, value);
+      totalUserVaultCollateralsmap.set(JSON.stringify(key[0].collateral), value);
     });
     return totalUserVaultCollateralsmap;
   }
@@ -47,9 +47,7 @@ async function collateralCurrencies(api) {
       let value = oracleaggregrate[1].toHuman();
   
       if (key[0].ExchangeRate) {
-        console.log("key,", key);
-        console.log("value,", value);
-        oracleaggregratemap.set(key[0].ExchangeRate.Token, value);
+        oracleaggregratemap.set(JSON.stringify(key[0].ExchangeRate), value);
       }
     });
     return oracleaggregratemap;
@@ -63,10 +61,7 @@ async function collateralCurrencies(api) {
       let key = totalIssuance[0].toHuman();
   
       let value = totalIssuance[1].toHuman();
-  
-      console.log("key", key);
-      console.log("value", value);
-      totalIssuancesemap.set(key[0].Token, value);
+      totalIssuancesemap.set(JSON.stringify(key[0]), value);
     });
     return totalIssuancesemap;
   }
@@ -76,19 +71,31 @@ async function collateralCurrencies(api) {
   
     switch (token) {
       case "IBTC":
-        providerurl = "wss://interlay.api.onfinality.io/public-ws";
+        providerurl = process.env.INTERLAY_NODE_URL || "wss://interlay-rpc.dwellir.com";
         break;
       case "KBTC":
-        providerurl = "wss://kintsugi.api.onfinality.io/public-ws";
+        providerurl = process.env.KITSUNGI_NODE_URL || "wss://kintsugi-rpc.dwellir.com";
         break;
     }
     const wsProvider = new WsProvider(
-      // "wss://interlay.api.onfinality.io/public-ws"
-      providerurl
+       providerurl
     );
-    const api = await ApiPromise.create({
+
+    console.log("getinterlay api")
+    let api;
+    try{
+       api = await ApiPromise.create({
       provider: wsProvider,
+      throwOnConnect: true,
+      throwOnUnknown:true
     });
+  }catch(e){
+    console.log("throw getinterlay api")
+
+throw e
+  }
+
+ 
   
     let collateralCurrenciesmap = new Map();
     let totalUserVaultCollateralmap = new Map();
@@ -117,7 +124,7 @@ async function collateralCurrencies(api) {
   
     let total_backable = bignumber.from(0);
   
-    for (let [collateralCurrency, value] of collateralCurrenciesmap) {
+    for (let [collateralCurrency,value] of collateralCurrenciesmap) {
       console.log("collateralCurrency", collateralCurrency);
 
       let  collateralCurrencyString = totalUserVaultCollateralmap.get(collateralCurrency)
@@ -127,11 +134,24 @@ async function collateralCurrencies(api) {
           totalUserVaultCollateralmap.get(collateralCurrency).replaceAll(",", "")
         );
       }
+
+      
   
-        
-      let oracleaggregatecurrency = bignumber.from(
+     let oac = oracleaggregatormap.get(collateralCurrency)
+     let oracleaggregatecurrency;
+
+     if(oac){
+      console.log("----------",collateralCurrency,oac)
+
+      oracleaggregatecurrency = bignumber.from(
         oracleaggregatormap.get(collateralCurrency).replaceAll(",", "")
       );
+     }else{
+      continue
+     }
+     
+        
+     
       // console.log(
       //   "totalUserVaultCollateralcurrenct",
       //   totalUserVaultCollateralcurrency.toString()
@@ -147,21 +167,34 @@ async function collateralCurrencies(api) {
   
       // totalUserVaultCollateralcurrency =
       //   totalUserVaultCollateralcurrency.div(1e10);
+
   
       if(totalUserVaultCollateralcurrency){
+        console.log("adding ---------this ---",totalUserVaultCollateralcurrency.div(oracleaggregatecurrency).toString())
+        console.log(" ---------oracleaggregatecurrency ---",oracleaggregatecurrency.toString())
+
+        console.log(" ---------totalUserVaultCollateralcurrency ---",totalUserVaultCollateralcurrency.toString())
+
+
         total_backable = total_backable.add(
           totalUserVaultCollateralcurrency.div(oracleaggregatecurrency)
         );
       }
+
+      console.log("total_backable",total_backable.toString())
+
       
     }
   
     console.log("totalIssuancesemap", totalIssuancesemap);
-  
+
+    let t = {}
+    t.Token = token
     let total_issued = bignumber.from(
-      totalIssuancesemap.get(token).replaceAll(",", "")
+      totalIssuancesemap.get(JSON.stringify(t)).replaceAll(",", "")
     );
-    // total_issued = total_issued.div(1e8);
+
+     // total_issued = total_issued.div(1e8);
   
     await api.disconnect();
     total_backable = total_backable.div(1e2);

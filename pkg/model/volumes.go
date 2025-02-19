@@ -154,22 +154,23 @@ func (datastore *DB) GetVolumesAllExchanges(asset dia.Asset, starttime time.Time
 	return
 }
 
-func (datastore *DB) GetExchangePairVolumes(asset dia.Asset, starttime time.Time, endtime time.Time) (map[string][]dia.PairVolume, error) {
+func (datastore *DB) GetExchangePairVolumes(asset dia.Asset, starttime time.Time, endtime time.Time, threshold float64) (map[string][]dia.PairVolume, error) {
 	volumeMap := make(map[string][]dia.PairVolume)
 
 	query := fmt.Sprintf(
 		`
-		SELECT SUM(multiplication)
+		SELECT SUM(multiplication),COUNT(*)
 		FROM (
 			SELECT ABS(estimatedUSDPrice*volume)
 			AS multiplication
 			FROM %s
 			WHERE quotetokenaddress='%s'
 			AND quotetokenblockchain='%s'
+			AND basetokenaddress!=''
 			AND time>%d
 			AND time<=%d
 			)
-		GROUP BY "exchange","basetokenaddress","basetokenblockchain"
+		GROUP BY "exchange","basetokenaddress","basetokenblockchain","pooladdress"
 		`,
 		influxDbTradesTable,
 		asset.Address,
@@ -196,13 +197,68 @@ func (datastore *DB) GetExchangePairVolumes(asset dia.Asset, starttime time.Time
 				if err != nil {
 					log.Warn("parse volume: ", err)
 				}
+				if !(pairvolume.Volume >= threshold) {
+					continue
+				}
+				pairvolume.TradesCount, err = row.Values[0][2].(json.Number).Int64()
+				if err != nil {
+					log.Warn("parse trades count: ", err)
+				}
 				pairvolume.Pair = dia.Pair{
 					QuoteToken: dia.Asset{Blockchain: asset.Blockchain, Address: asset.Address},
 					BaseToken:  dia.Asset{Blockchain: row.Tags["basetokenblockchain"], Address: row.Tags["basetokenaddress"]},
 				}
+				pairvolume.PoolAddress = row.Tags["pooladdress"]
 				volumeMap[exchange] = append(volumeMap[exchange], pairvolume)
 			}
 		}
 	}
 	return volumeMap, nil
+}
+
+func (datastore *DB) GetExchangePairVolume(
+	ep dia.ExchangePair,
+	pooladdress string,
+	starttime time.Time,
+	endtime time.Time,
+	threshold float64,
+) (volume float64, tradesCount int64, err error) {
+	query := fmt.Sprintf(
+		`
+		SELECT SUM(multiplication),COUNT(*)
+		FROM (
+			SELECT ABS(estimatedUSDPrice*volume)
+			AS multiplication
+			FROM %s
+			WHERE quotetokenaddress='%s'
+			AND quotetokenblockchain='%s'
+			AND basetokenaddress='%s'
+			AND basetokenblockchain='%s'
+			AND pooladdress='%s'
+			AND exchange='%s'
+			AND time>%d
+			AND time<=%d
+			)
+		`,
+		influxDbTradesTable,
+		ep.UnderlyingPair.QuoteToken.Address,
+		ep.UnderlyingPair.QuoteToken.Blockchain,
+		ep.UnderlyingPair.BaseToken.Address,
+		ep.UnderlyingPair.BaseToken.Blockchain,
+		pooladdress,
+		ep.Exchange,
+		starttime.UnixNano(),
+		endtime.UnixNano(),
+	)
+
+	res, err := queryInfluxDB(datastore.influxClient, query)
+	if err != nil {
+		return
+	}
+
+	if len(res) > 0 && len(res[0].Series) > 0 {
+		volume, _ = res[0].Series[0].Values[0][1].(json.Number).Float64()
+		tradesCount, _ = res[0].Series[0].Values[0][2].(json.Number).Int64()
+	}
+	return
 }

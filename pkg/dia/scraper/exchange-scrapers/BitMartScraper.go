@@ -1,9 +1,12 @@
 package scrapers
 
 import (
+	"bytes"
+	"compress/flate"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"strconv"
 	"strings"
 	"sync"
@@ -269,6 +272,7 @@ func (s *BitMartScraper) mainLoop() {
 	defer s.cleanup(nil)
 	defer func() {
 		log.Printf("Shutting down main loop...\n")
+		return
 	}()
 	for i := 0; i < bitMartMaxConnections; i++ {
 		go func(idx int) {
@@ -287,6 +291,7 @@ func (s *BitMartScraper) mainLoop() {
 				s.rl.Take()
 				if err := s.wsClient[idx].WriteMessage(ws.TextMessage, []byte(bitMartPingMessage)); err != nil {
 					log.Errorf("Error sending ping: %s", err)
+					return
 				}
 			}
 		}(i)
@@ -304,32 +309,50 @@ func (s *BitMartScraper) mainLoop() {
 							return
 						}
 						if err := s.retryConnection(idx); err != nil || ws.IsCloseError(err, ws.CloseAbnormalClosure) {
-							continue
+							return
 						}
 					}
-					if msgType == ws.TextMessage {
+
+					var output []byte
+					switch msgType {
+					case ws.BinaryMessage:
+						reader := bytes.NewReader(msg)
+						gzreader := flate.NewReader(reader)
+						if err != nil {
+							log.Error("flate reader: ", err)
+							return
+						}
+						output, err = ioutil.ReadAll(gzreader)
+						if err != nil {
+							log.Error("read all: ", err)
+							return
+						}
+					case ws.TextMessage:
 						if string(msg) == bitMartPongMessage {
 							s.errCount[idx] = 0
-							continue
+							return
 						}
-						var subResults BitmartWsTradeResponse
-						if err := json.Unmarshal(msg, &subResults); err != nil {
-							log.Errorf("Response error at connection #%d, err=%s\n", idx, err.Error())
-							s.setError(err)
-							s.errCount[idx]++
-							if err := s.retryConnection(idx); err != nil {
-								continue
-							}
+						output = msg
+					}
+
+					// Unmarshal output and forward to listener.
+					var subResults BitmartWsTradeResponse
+					if err := json.Unmarshal(output, &subResults); err != nil {
+						log.Errorf("Response error at connection #%d, err=%s\n", idx, err.Error())
+						s.setError(err)
+						s.errCount[idx]++
+						if err := s.retryConnection(idx); err != nil {
+							return
 						}
-						if subResults.ErrorCode != "" {
-							log.Errorf("Error code %s at %s event: %s", subResults.ErrorCode, subResults.Event, subResults.ErrorMessage)
-							s.errCount[idx]++
-							continue
-						}
-						if subResults.Table == bitMartWSSpotTradingTopic {
-							s.errCount[idx] = 0
-							s.listener <- &subResults
-						}
+					}
+					if subResults.ErrorCode != "" {
+						log.Errorf("Error code %s at %s event: %s", subResults.ErrorCode, subResults.Event, subResults.ErrorMessage)
+						s.errCount[idx]++
+						continue
+					}
+					if subResults.Table == bitMartWSSpotTradingTopic {
+						s.errCount[idx] = 0
+						s.listener <- &subResults
 					}
 				}
 			}
@@ -371,16 +394,10 @@ func (s *BitMartScraper) mainLoop() {
 				if discardTrade {
 					log.Warn("Identical trade already scraped: ", t)
 					continue
+				} else {
+					t.IdentifyDuplicateTagset(tmDuplicateTrades, duplicateTradesMemory)
+					s.chanTrades <- t
 				}
-				t1 := t.Time
-				t.IdentifyDuplicateTagset(tmDuplicateTrades, duplicateTradesMemory)
-				t2 := t.Time
-				if t1 != t2 {
-					log.Warn("got duplicate trade. Increased timestamp by a nanosecond. time, symbol, price, volume, tradeID: ")
-					log.Warnf(" %v -- %s -- %v -- %v -- %s", t.Time, t.Pair, t.Price, t.Volume, t.ForeignTradeID)
-				}
-				s.chanTrades <- t
-
 			}
 		case <-s.shutdown:
 			return

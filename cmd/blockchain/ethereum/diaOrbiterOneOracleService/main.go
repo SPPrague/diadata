@@ -23,6 +23,8 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+var diaBaseUrl string
+
 func main() {
 	key := utils.Getenv("PRIVATE_KEY", "")
 	key_password := utils.Getenv("PRIVATE_KEY_PASSWORD", "")
@@ -51,6 +53,7 @@ func main() {
 	gqlMethodology := utils.Getenv("GQL_METHODOLOGY", "vwap")
 	assetsStr := utils.Getenv("ASSETS", "")
 	gqlAssetsStr := utils.Getenv("GQL_ASSETS", "")
+	diaBaseUrl = utils.Getenv("DIA_BASE_URL", "https://api.diadata.org")
 
 	addresses := []string{}
 	blockchains := []string{}
@@ -144,7 +147,30 @@ func periodicOracleUpdateHelper(oldPrice float64, deviationPermille int, auth *b
 		}
 		rawQ.Price = rawQ.Price * collateralRatio
 		rawQ.Symbol = "kBTC"
-	} else {
+	} else if address == "iBTC" && blockchain == "Kintsugi" {
+		rawQ, err = getAssetQuotationFromDia("Bitcoin", "0x0000000000000000000000000000000000000000")
+		if err != nil {
+			log.Fatalf("Failed to retrieve %s quotation data from DIA: %v", address, err)
+			return oldPrice, err
+		}
+
+		collateralRatio, err := getCollateralRatioFromDia("IBTC")
+		if err != nil {
+			log.Fatalf("Failed to retrieve %s collateral ratio data from DIA: %v", address, err)
+			return oldPrice, err
+		}
+		rawQ.Price = rawQ.Price * collateralRatio
+		rawQ.Symbol = "iBTC"
+	} else if address == "0x853d955aCEf822Db058eb8505911ED77F175b99e" && blockchain == "Ethereum" {
+		// Second special case: for FRAX use GQL with a selection of markets
+			price, symbol, err := getFraxGraphqlAssetQuotationFromDia(blockchain, address, 120, "vwap")
+			if err != nil {
+				log.Printf("Failed to retrieve %s quotation data from Graphql on DIA: %v", address, err)
+				return oldPrice, err
+			}
+			rawQ.Symbol = symbol
+			rawQ.Price = price
+	}  else {
 		// Do the "normal thing"
 		// Get quotation for token and update Oracle
 		if useGql {
@@ -162,6 +188,11 @@ func periodicOracleUpdateHelper(oldPrice float64, deviationPermille int, auth *b
 				return oldPrice, err
 			}
 		}
+		// Special case: rename MOVR -> WMOVR
+		if address == "0x0000000000000000000000000000000000000000" && blockchain == "Moonriver" {
+			log.Printf("Renaming MOVR -> WMOVR")
+			rawQ.Symbol = "WMOVR"
+		}
 	}
 	rawQ.Name = rawQ.Symbol
 
@@ -169,6 +200,15 @@ func periodicOracleUpdateHelper(oldPrice float64, deviationPermille int, auth *b
 	newPrice := rawQ.Price
 
 	if (newPrice > (oldPrice * (1 + float64(deviationPermille)/1000))) || (newPrice < (oldPrice * (1 - float64(deviationPermille)/1000))) {
+		// FRAX emergency brake
+		if address == "0x853d955aCEf822Db058eb8505911ED77F175b99e" {
+			log.Printf("brake check new price: %d\n", newPrice)
+			if newPrice < 0.99 || newPrice > 1.01 {
+				log.Printf("ERROR: Price read from API for asset %s is: %d", address, newPrice)
+				return oldPrice, nil
+			}
+		}
+
 		log.Println("Entering deviation based update zone")
 		err = updateQuotation(rawQ, auth, contract, conn)
 		if err != nil {
@@ -239,7 +279,6 @@ func updateOracle(
 	tx, err := contract.SetValue(&bind.TransactOpts{
 		From:     auth.From,
 		Signer:   auth.Signer,
-		//GasLimit: 1000725,
 		GasPrice: gasPrice,
 	}, key, big.NewInt(value), big.NewInt(timestamp))
 	if err != nil {
@@ -255,7 +294,7 @@ func updateOracle(
 }
 
 func getAssetQuotationFromDia(blockchain, address string) (*models.Quotation, error) {
-	response, err := http.Get("https://api.diadata.org/v1/assetQuotation/" + blockchain + "/" + address)
+	response, err := http.Get(diaBaseUrl + "/v1/assetQuotation/" + blockchain + "/" + address)
 	if err != nil {
 		return nil, err
 	}
@@ -287,7 +326,7 @@ func getGraphqlAssetQuotationFromDia(blockchain, address string, windowSize int,
 			Value  float64   `json:"Value"`
 		} `json:"GetChart"`
 	}
-	client := gql.NewClient("https://api.diadata.org/graphql/query")
+	client := gql.NewClient(diaBaseUrl + "/graphql/query")
 	req := gql.NewRequest(`
     query  {
 		 GetChart(
@@ -317,8 +356,50 @@ func getGraphqlAssetQuotationFromDia(blockchain, address string, windowSize int,
 	return r.GetChart[len(r.GetChart)-1].Value, r.GetChart[len(r.GetChart)-1].Symbol, nil
 }
 
+func getFraxGraphqlAssetQuotationFromDia(blockchain, address string, windowSize int, gqlMethodology string) (float64, string, error) {
+	currentTime := time.Now()
+	starttime := currentTime.Add(time.Duration(-windowSize * 2) * time.Second)
+	type Response struct {
+		GetChart []struct {
+			Name   string    `json:"Name"`
+			Symbol string    `json:"Symbol"`
+			Time   time.Time `json:"Time"`
+			Value  float64   `json:"Value"`
+		} `json:"GetChart"`
+	}
+	client := gql.NewClient(diaBaseUrl + "/graphql/query")
+	req := gql.NewRequest(`
+    query  {
+		 GetChart(
+		 	filter: "` + gqlMethodology + `", 
+			Symbol:"Asset",
+			BlockDurationSeconds: ` + strconv.Itoa(windowSize) + `, 
+			BlockShiftSeconds: ` + strconv.Itoa(windowSize) + `,
+			StartTime: ` + strconv.FormatInt(starttime.Unix(), 10) + `, 
+			EndTime: ` + strconv.FormatInt(currentTime.Unix(), 10) + `, 
+			Address: "` + address + `", 
+			Exchanges:["Curvefi"],
+			BlockChain: "` + blockchain + `") {
+				Name
+				Symbol
+				Time
+				Value
+	  	}
+		}`)
+
+	ctx := context.Background()
+	var r Response
+	if err := client.Run(ctx, req, &r); err != nil {
+		return 0.0, "", err
+	}
+	if len(r.GetChart) == 0 {
+		return 0.0, "", errors.New("no results")
+	}
+	return r.GetChart[len(r.GetChart)-1].Value, r.GetChart[len(r.GetChart)-1].Symbol, nil
+}
+
 func getCollateralRatioFromDia(symbol string) (float64, error) {
-	response, err := http.Get("https://api.diadata.org/customer/interlay/state/" + symbol)
+	response, err := http.Get(diaBaseUrl + "/xlsd/interlay/" + symbol)
 	if err != nil {
 		return 0.0, err
 	}
@@ -331,17 +412,9 @@ func getCollateralRatioFromDia(symbol string) (float64, error) {
 	if err != nil {
 		return 0.0, err
 	}
-	sTotalBackable := gjson.Get(string(contents), "total_backable").String()
-	sTotalIssued := gjson.Get(string(contents), "total_issued").String()
+	totalBackable := gjson.Get(string(contents), "Collateralratio.LockedToken").Float()
+	totalIssued := gjson.Get(string(contents), "Collateralratio.IssuedToken").Float()
 
-	totalBackable, err := strconv.ParseUint(sTotalBackable, 10, 64)
-	if err != nil {
-		return 0.0, err
-	}
-	totalIssued, err := strconv.ParseUint(sTotalIssued, 10, 64)
-	if err != nil {
-		return 0.0, err
-	}
 	if totalBackable >= totalIssued {
 		return 1.0, nil
 	}

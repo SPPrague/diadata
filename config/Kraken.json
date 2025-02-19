@@ -1,238 +1,580 @@
 {
-  "Coins": [
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "ADAETH",
-      "Ignore": false,
-      "Symbol": "ADA"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "ADAUSD",
-      "Ignore": false,
-      "Symbol": "ADA"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "ADAXBT",
-      "Ignore": false,
-      "Symbol": "ADA"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "ASTRUSD",
-      "Ignore": false,
-      "Symbol": "ASTR"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "AVAXUSD",
-      "Ignore": false,
-      "Symbol": "AVAX"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "BCHUSD",
-      "Ignore": false,
-      "Symbol": "BCH"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "BCHXBT",
-      "Ignore": false,
-      "Symbol": "BCH"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "CFGUSD",
-      "Ignore": false,
-      "Symbol": "CFG"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "DAIUSD",
-      "Ignore": false,
-      "Symbol": "DAI"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "DASHXBT",
-      "Ignore": false,
-      "Symbol": "DASH"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "DOTUSD",
-      "Ignore": false,
-      "Symbol": "DOT"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "EOSETH",
-      "Ignore": false,
-      "Symbol": "EOS"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "EOSXBT",
-      "Ignore": false,
-      "Symbol": "EOS"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "GLMRUSD",
-      "Ignore": false,
-      "Symbol": "GLMR"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "LDOUSD",
-      "Ignore": false,
-      "Symbol": "LDO"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "MOVRUSD",
-      "Ignore": false,
-      "Symbol": "MOVR"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "XETCXETH",
-      "Ignore": false,
-      "Symbol": "ETC"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "XETCXXBT",
-      "Ignore": false,
-      "Symbol": "ETC"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "KILTUSD",
-      "Ignore": false,
-      "Symbol": "KILT"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "QTUMUSD",
-      "Ignore": false,
-      "Symbol": "QTUM"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "SDNUSD",
-      "Ignore": false,
-      "Symbol": "SDN"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "SYNUSD",
-      "Ignore": false,
-      "Symbol": "SYN"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "USDTZUSD",
-      "Ignore": false,
-      "Symbol": "USDT"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "USDCUSD",
-      "Ignore": false,
-      "Symbol": "USDC"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "WBTCUSD",
-      "Ignore": false,
-      "Symbol": "WBTC"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "WBTCXBT",
-      "Ignore": false,
-      "Symbol": "WBTC"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "XETCZUSD",
-      "Ignore": false,
-      "Symbol": "ETC"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "XETHXXBT",
-      "Ignore": false,
-      "Symbol": "ETH"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "XLTCXXBT",
-      "Ignore": false,
-      "Symbol": "LTC"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "XREPXETH",
-      "Ignore": false,
-      "Symbol": "REP"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "XREPXXBT",
-      "Ignore": false,
-      "Symbol": "REP"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "XXLMXXBT",
-      "Ignore": false,
-      "Symbol": "XLM"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "XXBTZUSD",
-      "Ignore": false,
-      "Symbol": "BTC"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "XXMRXXBT",
-      "Ignore": false,
-      "Symbol": "XMR"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "XXRPXXBT",
-      "Ignore": false,
-      "Symbol": "XRP"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "XZECXXBT",
-      "Ignore": false,
-      "Symbol": "ZEC"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "YFIUSD",
-      "Ignore": false,
-      "Symbol": "YFI"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "ZEURZUSD",
-      "Ignore": false,
-      "Symbol": "EUR"
-    },
-    {
-      "Exchange": "Kraken",
-      "ForeignName": "ZGBPZUSD",
-      "Ignore": false,
-      "Symbol": "GBP"
-    }
-  ]
+    "Coins": [
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "AAVEUSD",
+            "Ignore": false,
+            "Symbol": "AAVE"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "ADAETH",
+            "Ignore": false,
+            "Symbol": "ADA"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "ADAUSD",
+            "Ignore": false,
+            "Symbol": "ADA"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "ADAXBT",
+            "Ignore": false,
+            "Symbol": "ADA"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "ADAUSDT",
+            "Symbol": "ADA"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "AKTUSD",
+            "Ignore": false,
+            "Symbol": "AKT"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "APTUSD",
+            "Symbol": "APT"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "ARBUSD",
+            "Ignore": false,
+            "Symbol": "ARB"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "ASTRUSD",
+            "Ignore": false,
+            "Symbol": "ASTR"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "ATOMUSD",
+            "Symbol": "ATOM"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "ATOMUSDT",
+            "Symbol": "ATOM"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "AVAXUSD",
+            "Ignore": false,
+            "Symbol": "AVAX"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "AVAXUSDT",
+            "Symbol": "AVAX"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "BCHUSD",
+            "Ignore": false,
+            "Symbol": "BCH"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "BCHXBT",
+            "Ignore": false,
+            "Symbol": "BCH"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "BEAMUSD",
+            "Symbol": "BEAM"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "BNCUSD",
+            "Ignore": false,
+            "Symbol": "BNC"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "BONKUSD",
+            "Symbol": "BONK"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "XXBTZUSD",
+            "Ignore": false,
+            "Symbol": "BTC"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "XBTUSDT",
+            "Symbol": "BTC"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "XBTUSDC",
+            "Symbol": "BTC"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "CFGUSD",
+            "Ignore": false,
+            "Symbol": "CFG"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "DAIUSD",
+            "Ignore": false,
+            "Symbol": "DAI"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "DASHXBT",
+            "Ignore": false,
+            "Symbol": "DASH"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "XDGUSDT",
+            "Symbol": "DOGE"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "XDGUSD",
+            "Symbol": "DOGE"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "DOTUSD",
+            "Ignore": false,
+            "Symbol": "DOT"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "DOTUSDT",
+            "Symbol": "DOT"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "DYDXUSD",
+            "Symbol": "DYDX"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "ENAUSD",
+            "Symbol": "ENA"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "ENSUSD",
+            "Symbol": "ENS"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "EOSETH",
+            "Ignore": false,
+            "Symbol": "EOS"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "EOSXBT",
+            "Ignore": false,
+            "Symbol": "EOS"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "XETCXETH",
+            "Ignore": false,
+            "Symbol": "ETC"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "XETCXXBT",
+            "Ignore": false,
+            "Symbol": "ETC"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "XETCZUSD",
+            "Ignore": false,
+            "Symbol": "ETC"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "XETHXXBT",
+            "Ignore": false,
+            "Symbol": "ETH"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "XETHZUSD",
+            "Symbol": "ETH"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "ETHUSDT",
+            "Symbol": "ETH"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "ZEURZUSD",
+            "Ignore": false,
+            "Symbol": "EUR"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "FETUSD",
+            "Symbol": "FET"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "FILUSD",
+            "Symbol": "FIL"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "FTMUSD",
+            "Symbol": "FTM"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "ZGBPZUSD",
+            "Ignore": false,
+            "Symbol": "GBP"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "GLMRUSD",
+            "Ignore": false,
+            "Symbol": "GLMR"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "GRTUSD",
+            "Symbol": "GRT"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "ICPUSD",
+            "Symbol": "ICP"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "IMXUSD",
+            "Symbol": "IMX"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "KILTUSD",
+            "Ignore": false,
+            "Symbol": "KILT"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "KINTUSD",
+            "Ignore": false,
+            "Symbol": "KINT"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "LDOUSD",
+            "Ignore": false,
+            "Symbol": "LDO"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "XLTCXXBT",
+            "Ignore": false,
+            "Symbol": "LTC"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "MKRUSD",
+            "Symbol": "MKR"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "MNTUSD",
+            "Symbol": "MNT"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "MOVRUSD",
+            "Ignore": false,
+            "Symbol": "MOVR"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "NEARUSD",
+            "Symbol": "NEAR"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "ONDOUSD",
+            "Symbol": "ONDO"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "OPUSD",
+            "Symbol": "OP"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "PAXGUSD",
+            "Ignore": false,
+            "Symbol": "PAXG"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "PENDLEUSD",
+            "Symbol": "PENDLE"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "POLUSD",
+            "Ignore": false,
+            "Symbol": "POL"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "PRIMEUSD",
+            "Symbol": "PRIME"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "QTUMUSD",
+            "Ignore": false,
+            "Symbol": "QTUM"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "SANDUSD",
+            "Symbol": "SAND"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "SDNUSD",
+            "Ignore": false,
+            "Symbol": "SDN"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "SEIUSD",
+            "Symbol": "SEI"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "SHIBUSDT",
+            "Symbol": "SHIB"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "SHIBUSD",
+            "Symbol": "SHIB"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "SOLUSDT",
+            "Symbol": "SOL"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "SOLUSD",
+            "Symbol": "SOL"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "STGUSD",
+            "Symbol": "STG"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "STORJUSD",
+            "Ignore": false,
+            "Symbol": "STORJ"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "STRKUSD",
+            "Symbol": "STRK"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "STXUSD",
+            "Symbol": "STX"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "SUIUSD",
+            "Symbol": "SUI"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "SUSHIUSD",
+            "Symbol": "SUSHI"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "SYNUSD",
+            "Ignore": false,
+            "Symbol": "SYN"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "TAOUSD",
+            "Symbol": "TAO"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "TIAUSD",
+            "Ignore": false,
+            "Symbol": "TIA"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "TONUSD",
+            "Symbol": "TON"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "TRXUSD",
+            "Symbol": "TRX"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "UNIUSD",
+            "Symbol": "UNI"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "USDCUSD",
+            "Ignore": false,
+            "Symbol": "USDC"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "USDCUSDT",
+            "Ignore": false,
+            "Symbol": "USDC"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "USDTZUSD",
+            "Ignore": false,
+            "Symbol": "USDT"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "WBTCUSD",
+            "Ignore": false,
+            "Symbol": "WBTC"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "WBTCXBT",
+            "Ignore": false,
+            "Symbol": "WBTC"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "WIFUSD",
+            "Symbol": "WIF"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "XXLMXXBT",
+            "Ignore": false,
+            "Symbol": "XLM"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "XXLMZUSD",
+            "Symbol": "XLM"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "XXMRXXBT",
+            "Ignore": false,
+            "Symbol": "XMR"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "XXRPXXBT",
+            "Ignore": false,
+            "Symbol": "XRP"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "XRPUSDT",
+            "Symbol": "XRP"
+        },
+        {
+            "Exchange": "Kraken",
+            "Ignore": false,
+            "ForeignName": "XXRPZUSD",
+            "Symbol": "XRP"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "YFIUSD",
+            "Ignore": false,
+            "Symbol": "YFI"
+        },
+        {
+            "Exchange": "Kraken",
+            "ForeignName": "XZECXXBT",
+            "Ignore": false,
+            "Symbol": "ZEC"
+        }
+    ]
 }

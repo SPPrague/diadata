@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -24,7 +25,7 @@ func (datastore *DB) SaveTradeInfluxToTable(t *dia.Trade, table string) error {
 
 	// Create a point and add to batch
 	tags := map[string]string{
-		"symbol":               t.Symbol,
+		"symbol":               EscapeReplacer.Replace(t.Symbol),
 		"pair":                 t.Pair,
 		"exchange":             t.Source,
 		"verified":             strconv.FormatBool(t.VerifiedPair),
@@ -32,6 +33,7 @@ func (datastore *DB) SaveTradeInfluxToTable(t *dia.Trade, table string) error {
 		"basetokenaddress":     t.BaseToken.Address,
 		"quotetokenblockchain": t.QuoteToken.Blockchain,
 		"basetokenblockchain":  t.BaseToken.Blockchain,
+		"pooladdress":          t.PoolAddress,
 	}
 	fields := map[string]interface{}{
 		"price":             t.Price,
@@ -189,6 +191,103 @@ func (datastore *DB) GetOldTradesFromInflux(table string, exchange string, verif
 	return allTrades, nil
 }
 
+// parseFullTrade parses a trade as retreived from influx. If fullAsset=true blockchain and address of
+// the corresponding asset is returned as well.
+func parseFullTrade(row []interface{}) *dia.Trade {
+	if len(row) > 13 {
+		t, err := time.Parse(time.RFC3339, row[0].(string))
+		if err == nil {
+
+			var estimatedUSDPrice float64
+			v, o := row[1].(json.Number)
+			if o {
+				estimatedUSDPrice, _ = v.Float64()
+			} else {
+				log.Errorln("error on parsing row 1", row)
+			}
+
+			source, o := row[2].(string)
+			if !o {
+				log.Errorln("error on parsing row 2", row)
+			}
+
+			foreignTradeID, o := row[3].(string)
+			if !o {
+				log.Errorln("error on parsing row 3", row)
+			}
+
+			pair, o := row[4].(string)
+			if !o {
+				log.Errorln("error on parsing row 4", row)
+			}
+
+			var price float64
+			v, o = row[5].(json.Number)
+			if o {
+				price, _ = v.Float64()
+			} else {
+				log.Errorln("error on parsing row 5", row)
+			}
+
+			symbol, o := row[6].(string)
+			if !o {
+				log.Errorln("error on parsing row 6", row)
+			}
+
+			var volume float64
+			v, o = row[7].(json.Number)
+			if o {
+				volume, _ = v.Float64()
+			} else {
+				log.Errorln("error on parsing row 7", row)
+			}
+			var verified bool
+			ver, ok := row[8].(string)
+			if ok {
+				if ver == "true" {
+					verified = true
+				}
+			}
+			basetokenblockchain, o := row[9].(string)
+			if !o {
+				log.Errorln("error on parsing row 9", row)
+			}
+			basetokenaddress, o := row[10].(string)
+			if !o {
+				log.Errorln("error on parsing row 10", row)
+			}
+			quotetokenblockchain, o := row[11].(string)
+			if !o {
+				log.Errorln("error on parsing row 11", row)
+			}
+			quotetokenaddress, o := row[12].(string)
+			if !o {
+				log.Errorln("error on parsing row 12", row)
+			}
+			pooladdress, _ := row[13].(string)
+
+			trade := dia.Trade{
+				Symbol:            symbol,
+				Pair:              pair,
+				QuoteToken:        dia.Asset{Address: quotetokenaddress, Blockchain: quotetokenblockchain},
+				BaseToken:         dia.Asset{Address: basetokenaddress, Blockchain: basetokenblockchain},
+				PoolAddress:       pooladdress,
+				Time:              t,
+				Source:            source,
+				EstimatedUSDPrice: estimatedUSDPrice,
+				Price:             price,
+				Volume:            volume,
+				ForeignTradeID:    foreignTradeID,
+				VerifiedPair:      verified,
+			}
+
+			return &trade
+		}
+
+	}
+	return nil
+}
+
 // parseTrade parses a trade as retreived from influx. If fullAsset=true blockchain and address of
 // the corresponding asset is returned as well.
 func parseTrade(row []interface{}, fullBasetoken bool) *dia.Trade {
@@ -322,6 +421,7 @@ func (datastore *DB) GetTradesByExchangesFull(
 	if maxTrades > 0 {
 		query += fmt.Sprintf("ORDER BY DESC LIMIT %d ", maxTrades)
 	}
+	log.Info("query: ", query)
 	res, err := queryInfluxDB(datastore.influxClient, query)
 	if err != nil {
 		return r, err
@@ -401,7 +501,7 @@ func (datastore *DB) GetTradesByExchangesBatchedFull(
 		AND time > %d AND time <= %d ; `,
 			influxDbTradesTable, quoteasset.Address, quoteasset.Blockchain, subQuery, subQueryBase, startTimes[i].UnixNano(), endTimes[i].UnixNano())
 	}
-
+	log.Info("query: ", query)
 	res, err := queryInfluxDB(datastore.influxClient, query)
 	if err != nil {
 		return r, err
@@ -422,6 +522,480 @@ func (datastore *DB) GetTradesByExchangesBatchedFull(
 		}
 	} else {
 		log.Errorf("Empty response GetTradesByExchangesBatched for %s \n", quoteasset.Symbol)
+		return nil, fmt.Errorf("no trades found")
+	}
+
+	return r, nil
+}
+
+// GetxcTradesByExchangesBatched executes multiple select queries on the trades table in one batch.
+// The time ranges of the queries are given by the intervals [startTimes[i], endTimes[i]].
+func (datastore *DB) GetxcTradesByExchangesBatched(
+	quoteassets []dia.Asset,
+	exchanges []string,
+	startTimes []time.Time,
+	endTimes []time.Time,
+) ([]dia.Trade, error) {
+
+	var r []dia.Trade
+	if len(startTimes) != len(endTimes) {
+		return []dia.Trade{}, errors.New("number of start times must equal number of end times.")
+	}
+	var query string
+	for i := range startTimes {
+		subQueryExchanges := ""
+		subQueryAssets := ""
+		if len(exchanges) > 0 {
+			for _, exchange := range exchanges {
+				subQueryExchanges = subQueryExchanges + fmt.Sprintf("%s|", exchange)
+			}
+			subQueryExchanges = "AND exchange =~ /" + strings.TrimRight(subQueryExchanges, "|") + "/"
+		}
+
+		if len(quoteassets) > 0 {
+			for i, quoteasset := range quoteassets {
+				if i == 0 {
+					subQueryAssets = subQueryAssets + fmt.Sprintf(` AND ((quotetokenaddress='%s' AND quotetokenblockchain='%s')`, quoteasset.Address, quoteasset.Blockchain)
+
+				} else {
+					subQueryAssets = subQueryAssets + fmt.Sprintf(` OR (quotetokenaddress='%s' AND quotetokenblockchain='%s')`, quoteasset.Address, quoteasset.Blockchain)
+				}
+
+			}
+			subQueryAssets = subQueryAssets + ") "
+
+		}
+		query = query + fmt.Sprintf(`
+		SELECT time,estimatedUSDPrice,exchange,foreignTradeID,pair,price,symbol,volume,verified,basetokenblockchain,basetokenaddress
+		FROM %s 
+		WHERE estimatedUSDPrice > 0 
+		AND time > %d AND time <= %d 
+		%s %s ;`,
+			influxDbTradesTable, startTimes[i].UnixNano(), endTimes[i].UnixNano(), subQueryExchanges, subQueryAssets)
+	}
+	res, err := queryInfluxDB(datastore.influxClient, query)
+	if err != nil {
+		return r, err
+	}
+
+	if len(res) > 0 {
+		for i := range res {
+			if len(res[i].Series) > 0 {
+				log.Infof("parse %v trades...", len(res[i].Series[0].Values))
+				for _, row := range res[i].Series[0].Values {
+					t := parseTrade(row, false)
+					if t != nil {
+						r = append(r, *t)
+					}
+				}
+				log.Info("...done parsing.")
+			}
+		}
+	} else {
+		log.Error("Empty response GetxcTradesByExchangesBatched")
+		return nil, fmt.Errorf("no trades found")
+	}
+
+	return r, nil
+}
+
+// GetTradesByFeedSelection returns all trades with restrictions given by the struct @feedselection.
+func (datastore *DB) GetTradesByFeedSelection(
+	feedselection []dia.FeedSelection,
+	starttimes []time.Time,
+	endtimes []time.Time,
+	limit int,
+) ([]dia.Trade, error) {
+	var (
+		query string
+		r     []dia.Trade
+	)
+
+	if len(starttimes) != len(endtimes) {
+		return []dia.Trade{}, errors.New("number of start times must equal number of end times.")
+	}
+
+	for i := range starttimes {
+		query += fmt.Sprintf(`
+		SELECT time,estimatedUSDPrice,exchange,foreignTradeID,pair,price,symbol,volume,verified,basetokenblockchain,basetokenaddress,quotetokenblockchain,quotetokenaddress,pooladdress  
+		FROM %s 
+		WHERE ( `,
+			influxDbTradesTable,
+		)
+
+		// --------------------- Iterate over assets. ---------------------
+		for i, item := range feedselection {
+			if i > 0 {
+				query += " OR "
+			}
+			//  ---------------------Iterate over exchanges. ---------------------
+			var exchangeQuery string
+			for j, exchangepairs := range item.Exchangepairs {
+				if j == 0 {
+					exchangeQuery += " AND ("
+				} else {
+					exchangeQuery += " OR  "
+				}
+
+				// --------------------- Iterate over pairs/pools. ---------------------
+				var pairsQuery string
+				if exchangepairs.Exchange.Centralized {
+					for k, pair := range exchangepairs.Pairs {
+						if k == 0 {
+							pairsQuery += " AND ("
+						} else {
+							pairsQuery += " OR "
+						}
+						pairsQuery += fmt.Sprintf(`
+							( quotetokenaddress='%s' AND quotetokenblockchain='%s' AND basetokenaddress='%s' and basetokenblockchain='%s')
+							`,
+							pair.QuoteToken.Address,
+							pair.QuoteToken.Blockchain,
+							pair.BaseToken.Address,
+							pair.BaseToken.Blockchain,
+						)
+					}
+				} else {
+					for k, pool := range exchangepairs.Pools {
+						if k == 0 {
+							pairsQuery += " AND ("
+						} else {
+							pairsQuery += " OR "
+						}
+						pairsQuery += fmt.Sprintf(" pooladdress='%s' ", pool.Address)
+					}
+				}
+				if len(exchangepairs.Pairs) > 0 || len(exchangepairs.Pools) > 0 {
+					pairsQuery += " ) "
+				}
+
+				if exchangepairs.Exchange.Name != "" {
+					exchangeQuery += fmt.Sprintf(`(exchange='%s' %s)`, exchangepairs.Exchange.Name, pairsQuery)
+				} else {
+					// Take into account trades on all exchanges.
+					exchangeQuery += fmt.Sprintf(`exchange=~/./ %s`, pairsQuery)
+				}
+			}
+			if len(item.Exchangepairs) > 0 {
+				exchangeQuery += " ) "
+			}
+
+			// Main query for trades by asset.
+			query += fmt.Sprintf(`
+			( (quotetokenaddress='%s' AND quotetokenblockchain='%s') %s ) 
+			`,
+				item.Asset.Address,
+				item.Asset.Blockchain,
+				exchangeQuery,
+			)
+		}
+
+		// The bracket closes the main statement from the first WHERE clause.
+		var limitQuery string
+		if len(starttimes) == 1 && limit > 0 {
+			limitQuery = fmt.Sprintf(" ORDER BY DESC LIMIT %v", limit)
+		}
+		query += fmt.Sprintf(`
+		 )	
+		AND estimatedUSDPrice > 0
+		AND time > %d
+		AND time < %d %s;`,
+			starttimes[i].UnixNano(),
+			endtimes[i].UnixNano(),
+			limitQuery,
+		)
+	}
+
+	res, err := queryInfluxDB(datastore.influxClient, query)
+	if err != nil {
+		return r, err
+	}
+
+	if len(res) > 0 {
+		for i := range res {
+			if len(res[i].Series) > 0 {
+				log.Infof("parse %v trades...", len(res[i].Series[0].Values))
+				for _, row := range res[i].Series[0].Values {
+					t := parseFullTrade(row)
+					if t != nil {
+						r = append(r, *t)
+					}
+				}
+				log.Info("...done parsing.")
+			}
+		}
+	} else {
+		return nil, fmt.Errorf("No trades found.")
+	}
+
+	return r, nil
+}
+
+// GetAggregatedFeedSelection returns aggregated quantities with restrictions given by the struct @feedselection.
+func (datastore *DB) GetAggregatedFeedSelection(
+	feedselection []dia.FeedSelection,
+	starttime time.Time,
+	endtime time.Time,
+	tradeVolumeThreshold float64,
+) ([]dia.FeedSelectionAggregated, error) {
+	var (
+		query                   string
+		feedSelectionAggregated []dia.FeedSelectionAggregated
+	)
+
+	if starttime.After(endtime) {
+		return feedSelectionAggregated, errors.New("starttime is after endtime.")
+	}
+
+	query += fmt.Sprintf(`
+		SELECT SUM(abs),COUNT(multiplication),LAST(multiplication)
+		FROM (
+			SELECT ABS(estimatedUSDPrice*volume),estimatedUSDPrice AS multiplication
+			FROM %s 
+			WHERE ( `,
+		influxDbTradesTable,
+	)
+
+	// --------------------- Iterate over assets. ---------------------
+	for i, item := range feedselection {
+		if i > 0 {
+			query += " OR "
+		}
+		//  ---------------------Iterate over exchanges. ---------------------
+		var exchangeQuery string
+		for j, exchangepairs := range item.Exchangepairs {
+			if j == 0 {
+				exchangeQuery += " AND ("
+			} else {
+				exchangeQuery += " OR  "
+			}
+
+			// --------------------- Iterate over pairs/pools. ---------------------
+			var pairsQuery string
+			if exchangepairs.Exchange.Centralized {
+				for k, pair := range exchangepairs.Pairs {
+					if k == 0 {
+						pairsQuery += " AND ("
+					} else {
+						pairsQuery += " OR "
+					}
+					pairsQuery += fmt.Sprintf(`
+							( quotetokenaddress='%s' AND quotetokenblockchain='%s' AND basetokenaddress='%s' and basetokenblockchain='%s')
+							`,
+						pair.QuoteToken.Address,
+						pair.QuoteToken.Blockchain,
+						pair.BaseToken.Address,
+						pair.BaseToken.Blockchain,
+					)
+				}
+			} else {
+				for k, pool := range exchangepairs.Pools {
+					if k == 0 {
+						pairsQuery += " AND ("
+					} else {
+						pairsQuery += " OR "
+					}
+					pairsQuery += fmt.Sprintf(" pooladdress='%s' ", pool.Address)
+				}
+			}
+			if len(exchangepairs.Pairs) > 0 || len(exchangepairs.Pools) > 0 {
+				pairsQuery += " ) "
+			}
+
+			if exchangepairs.Exchange.Name != "" {
+				exchangeQuery += fmt.Sprintf(`(exchange='%s' %s)`, exchangepairs.Exchange.Name, pairsQuery)
+			} else {
+				// Take into account trades on all exchanges.
+				exchangeQuery += fmt.Sprintf(`exchange=~/./ %s`, pairsQuery)
+			}
+		}
+		if len(item.Exchangepairs) > 0 {
+			exchangeQuery += " ) "
+		}
+
+		// Main query for trades by asset.
+		query += fmt.Sprintf(`
+			( (quotetokenaddress='%s' AND quotetokenblockchain='%s') %s ) 
+			`,
+			item.Asset.Address,
+			item.Asset.Blockchain,
+			exchangeQuery,
+		)
+	}
+
+	query += fmt.Sprintf(`	
+		)
+		AND estimatedUSDPrice > 0
+		AND time >= %d
+		AND time < %d)
+		WHERE multiplication>%v `,
+		starttime.UnixNano(),
+		endtime.UnixNano(),
+		tradeVolumeThreshold,
+	)
+	query += ` GROUP BY "exchange","quotetokenaddress","quotetokenblockchain","basetokenaddress","basetokenblockchain","pooladdress","symbol","pair"`
+
+	res, err := queryInfluxDB(datastore.influxClient, query)
+	if err != nil {
+		return feedSelectionAggregated, err
+	}
+
+	if len(res) > 0 && len(res[0].Series) > 0 {
+		for _, row := range res[0].Series {
+			if len(row.Values[0]) > 1 {
+				var fsa dia.FeedSelectionAggregated
+				fsa.Exchange = row.Tags["exchange"]
+				fsa.Quotetoken.Address = row.Tags["quotetokenaddress"]
+				fsa.Quotetoken.Blockchain = row.Tags["quotetokenblockchain"]
+				fsa.Basetoken.Address = row.Tags["basetokenaddress"]
+				fsa.Basetoken.Blockchain = row.Tags["basetokenblockchain"]
+				// Parse symbol of basetoken
+				pairSymbols, err := dia.GetPairSymbols(dia.ExchangePair{
+					Symbol:      row.Tags["symbol"],
+					ForeignName: row.Tags["pair"],
+					Exchange:    row.Tags["exchange"],
+				})
+				if err != nil {
+					log.Error("Get pair symbols: ", err)
+				} else if len(pairSymbols) > 1 {
+					fsa.Quotetoken.Symbol = strings.ToUpper(pairSymbols[0])
+					fsa.Basetoken.Symbol = strings.ToUpper(pairSymbols[1])
+				}
+				fsa.Pooladdress = row.Tags["pooladdress"]
+				fsa.Volume, err = row.Values[0][1].(json.Number).Float64()
+				if err != nil {
+					log.Error("cast float64: ", err)
+				}
+				tradescount, err := row.Values[0][2].(json.Number).Int64()
+				if err != nil {
+					log.Error("cast int64: ", err)
+				}
+				fsa.TradesCount = int32(tradescount)
+				fsa.LastPrice, err = row.Values[0][3].(json.Number).Float64()
+				if err != nil {
+					log.Error("cast float64: ", err)
+				}
+				fsa.Starttime = starttime
+				fsa.Endtime = endtime
+				feedSelectionAggregated = append(feedSelectionAggregated, fsa)
+			}
+		}
+	} else {
+		return feedSelectionAggregated, fmt.Errorf("No trades found.")
+	}
+
+	// Sort response by volume.
+	sort.Slice(feedSelectionAggregated, func(m, n int) bool {
+		return feedSelectionAggregated[m].Volume > feedSelectionAggregated[n].Volume
+	})
+
+	return feedSelectionAggregated, nil
+}
+
+// GetTradesByExchangepairs returns all trades where either of the following is fulfilled.
+// 1. The exchange is a key of @exchangepairMap AND the pair is in the corresponding slice @[]dia.Pair.
+// 2. The exchange is a key of @exchangepoolMap AND the pool is in the corresponding slice @[]string.
+func (datastore *DB) GetTradesByExchangepairs(exchangepairMap map[string][]dia.Pair, exchangepoolMap map[string][]string, starttime time.Time, endtime time.Time) ([]dia.Trade, error) {
+	var (
+		query string
+		r     []dia.Trade
+	)
+
+	query = fmt.Sprintf(`
+		SELECT time,estimatedUSDPrice,exchange,foreignTradeID,pair,price,symbol,volume,verified,basetokenblockchain,basetokenaddress,quotetokenblockchain,quotetokenaddress  
+		FROM %s 
+		WHERE ( `,
+		influxDbTradesTable,
+	)
+
+	// Iterate over centralized exchanges.
+	var CEXCount int
+	for exchange := range exchangepairMap {
+		if CEXCount != 0 {
+			query += " OR "
+		}
+
+		// If, in addition to exchanges, pairs are also given, make pairs subquery for each exchange.
+		var pairsQuery string
+		if len(exchangepairMap) > 0 {
+			pairsQuery += " AND ( "
+			for i, pair := range exchangepairMap[exchange] {
+				if i != 0 {
+					pairsQuery += " OR "
+				}
+				pairsQuery += fmt.Sprintf(`
+				( quotetokenaddress='%s' AND quotetokenblockchain='%s' AND basetokenaddress='%s' and basetokenblockchain='%s')
+				`,
+					pair.QuoteToken.Address,
+					pair.QuoteToken.Blockchain,
+					pair.BaseToken.Address,
+					pair.BaseToken.Blockchain,
+				)
+			}
+			pairsQuery += " ) "
+		}
+
+		// Main query for trades by exchange.
+		query += fmt.Sprintf(" ( exchange='%s' %s ) ", exchange, pairsQuery)
+		CEXCount++
+	}
+
+	// Iterate over decentralized exchanges.
+	var DEXCount int
+	for exchange := range exchangepoolMap {
+		if DEXCount != 0 || len(exchangepairMap) > 0 {
+			query += " OR "
+		}
+
+		// If, in addition to exchanges, pools are also given, make pool subquery for each exchange.
+		var poolsQuery string
+		if len(exchangepairMap) > 0 {
+			poolsQuery += " AND ( "
+			for i, pooladdress := range exchangepoolMap[exchange] {
+				if i != 0 {
+					poolsQuery += " OR "
+				}
+				poolsQuery += fmt.Sprintf("( pooladdress='%s' )", pooladdress)
+			}
+			poolsQuery += " ) "
+		}
+
+		// Main query for trades by exchange.
+		query += fmt.Sprintf(" ( exchange='%s' %s ) ", exchange, poolsQuery)
+		DEXCount++
+	}
+
+	// The bracket closes the main statement from the first WHERE clause.
+	query += fmt.Sprintf(`
+		 )	
+		AND estimatedUSDPrice > 0
+		AND time > %d
+		AND time < %d`,
+		starttime.UnixNano(),
+		endtime.UnixNano(),
+	)
+
+	log.Info("query: ", query)
+	res, err := queryInfluxDB(datastore.influxClient, query)
+	if err != nil {
+		return r, err
+	}
+
+	if len(res) > 0 {
+		for i := range res {
+			if len(res[i].Series) > 0 {
+				log.Infof("parse %v trades...", len(res[i].Series[0].Values))
+				for _, row := range res[i].Series[0].Values {
+					t := parseFullTrade(row)
+					if t != nil {
+						r = append(r, *t)
+					}
+				}
+				log.Info("...done parsing.")
+			}
+		}
+	} else {
+		log.Error("Empty response GetxcTradesByExchangesBatched")
 		return nil, fmt.Errorf("no trades found")
 	}
 

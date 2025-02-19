@@ -1,130 +1,10 @@
 {
     "Tokens": [
         {
-            "Symbol": "DAI",
+            "Symbol": "1INCH",
             "Exchange": "Crypto.com",
             "Blockchain": "Ethereum",
-            "Address": "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-        },
-        {
-            "Symbol": "LUNA",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Terra",
-            "Address": "0x0000000000000000000000000000000000000000"
-        },
-        {
-            "Symbol": "SDN",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Shiden",
-            "Address": "0x0000000000000000000000000000000000000000"
-        },
-        {
-            "Symbol": "WBTC",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Ethereum",
-            "Address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
-        },
-        {
-            "Symbol": "BTC",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Bitcoin",
-            "Address": "0x0000000000000000000000000000000000000000"
-        },
-        {
-            "Symbol": "ETH",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Ethereum",
-            "Address": "0x0000000000000000000000000000000000000000"
-        },
-        {
-            "Symbol": "ADA",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Cardano",
-            "Address": "0x0000000000000000000000000000000000000000"
-        },
-        {
-            "Symbol": "BCH",
-            "Exchange": "Crypto.com",
-            "Blockchain": "BitcoinCash",
-            "Address": "0x0000000000000000000000000000000000000000"
-        },
-        {
-            "Symbol": "DOT",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Polkadot",
-            "Address": "0x0000000000000000000000000000000000000000"
-        },
-        {
-            "Symbol": "FIL",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Filecoin",
-            "Address": "0x0000000000000000000000000000000000000000"
-        },
-        {
-            "Symbol": "FTM",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Fantom",
-            "Address": "0x0000000000000000000000000000000000000000"
-        },
-        {
-            "Symbol": "LRC",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Ethereum",
-            "Address": "0xBBbbCA6A901c926F240b89EacB641d8Aec7AEafD"
-        },
-        {
-            "Symbol": "SOL",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Solana",
-            "Address": "0x0000000000000000000000000000000000000000"
-        },     
-        {
-            "Symbol": "UNI",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Ethereum",
-            "Address": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"
-        },
-        {
-            "Symbol": "USDT",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Ethereum",
-            "Address": "0xdAC17F958D2ee523a2206206994597C13D831ec7"
-        },
-        {
-            "Symbol": "USDC",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Ethereum",
-            "Address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
-        },
-        {
-            "Symbol": "EOS",
-            "Exchange": "Crypto.com",
-            "Blockchain": "EOS.IO",
-            "Address": "0x0000000000000000000000000000000000000000"
-        },
-        {
-            "Symbol": "XRP",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Ripple",
-            "Address": "0x0000000000000000000000000000000000000000"
-        },
-        {
-            "Symbol": "LTC",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Litecoin",
-            "Address": "0x0000000000000000000000000000000000000000"
-        },
-        {
-            "Symbol": "LINK",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Ethereum",
-            "Address": "0x514910771AF9Ca656af840dff83E8264EcF986CA"
-        },
-        {
-            "Symbol": "SUSHI",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Ethereum",
-            "Address": "0x6B3595068778DD592e39A122f4f5a5cF09C90fE2"
+            "Address": "0x111111111117dC0aa78b770fA6A738034120C302"
         },
         {
             "Symbol": "AAVE",
@@ -133,70 +13,16 @@
             "Address": "0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9"
         },
         {
-            "Symbol": "DOGE",
+            "Symbol": "ADA",
             "Exchange": "Crypto.com",
-            "Blockchain": "Dogechain",
+            "Blockchain": "Cardano",
             "Address": "0x0000000000000000000000000000000000000000"
         },
         {
-            "Symbol": "MATIC",
+            "Symbol": "AERO",
             "Exchange": "Crypto.com",
-            "Blockchain": "Polygon",
-            "Address": "0x0000000000000000000000000000000000001010"
-        },
-        {
-            "Symbol": "ETC",
-            "Exchange": "Crypto.com",
-            "Blockchain": "EthereumClassic",
-            "Address": "0x0000000000000000000000000000000000000000"
-        },
-        {
-            "Symbol": "XLM",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Stellar",
-            "Address": "0x0000000000000000000000000000000000000000"
-        },
-        {
-            "Symbol": "VET",
-            "Exchange": "Crypto.com",
-            "Blockchain": "VeChain",
-            "Address": "0x0000000000000000000000000000000000000000"
-        },
-        {
-            "Symbol": "COMP",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Ethereum",
-            "Address": "0xc00e94Cb662C3520282E6f5717214004A7f26888"
-        },
-        {
-            "Symbol": "MANA",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Ethereum",
-            "Address": "0x0F5D2fB29fb7d3CFeE444a200298f468908cC942"
-        },
-        {
-            "Symbol": "CRV",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Ethereum",
-            "Address": "0xD533a949740bb3306d119CC777fa900bA034cd52"
-        },
-        {
-            "Symbol": "ENJ",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Ethereum",
-            "Address": "0xF629cBd94d3791C9250152BD8dfBDF380E2a3B9c"
-        },
-        {
-            "Symbol": "GRT",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Ethereum",
-            "Address": "0xc944E90C64B2c07662A292be6244BDf05Cda44a7"
-        },
-        {
-            "Symbol": "YFI",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Ethereum",
-            "Address": "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
+            "Blockchain": "Base",
+            "Address": "0x940181a94A35A4569E4529A3CDfB74e38FD98631"
         },
         {
             "Symbol": "ALGO",
@@ -205,22 +31,82 @@
             "Address": "0x0000000000000000000000000000000000000000"
         },
         {
-            "Symbol": "OMG",
+            "Symbol": "ANKR",
             "Exchange": "Crypto.com",
             "Blockchain": "Ethereum",
-            "Address": "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07"
+            "Address": "0x8290333ceF9e6D528dD5618Fb97a76f268f3EDD4"
         },
         {
-            "Symbol": "COTI",
             "Exchange": "Crypto.com",
-            "Blockchain": "Ethereum",
-            "Address": "0xDDB3422497E61e13543BeA06989C0789117555c5"
+            "Symbol": "APT",
+            "Blockchain": "Aptos",
+            "Address": "0x1::aptos_coin::AptosCoin"
         },
         {
-            "Symbol": "EGLD",
             "Exchange": "Crypto.com",
-            "Blockchain": "Elrond",
+            "Symbol": "AR",
+            "Blockchain": "Arweave",
             "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "ARB",
+            "Blockchain": "Arbitrum",
+            "Address": "0x912CE59144191C1204E64559FE8253a0e49E6548"
+        },
+        {
+            "Symbol": "ASTR",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Astar",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "ATOM",
+            "Blockchain": "Cosmos",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "AVAX",
+            "Blockchain": "Avalanche",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "BAT",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0x0D8775F648430679A709E98d2b0Cb6250d2887EF"
+        },
+        {
+            "Symbol": "BCH",
+            "Exchange": "Crypto.com",
+            "Blockchain": "BitcoinCash",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "BEAM",
+            "Blockchain": "Ethereum",
+            "Address": "0x62D0A8458eD7719FDAF978fe5929C6D342B0bFcE"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "BNB",
+            "Blockchain": "BinanceSmartChain",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "BOBA",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0x42bBFa2e77757C645eeaAd1655E0911a7553Efbc"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "BONK",
+            "Blockchain": "Solana",
+            "Address": "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263"
         },
         {
             "Symbol": "BOSON",
@@ -229,39 +115,9 @@
             "Address": "0xC477D038d5420C6A9e0b031712f61c5120090de9"
         },
         {
-            "Symbol": "FET",
+            "Symbol": "BTC",
             "Exchange": "Crypto.com",
-            "Blockchain": "Fetch",
-            "Address": "0x0000000000000000000000000000000000000000"
-        },
-        {
-            "Symbol": "GLM",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Ethereum",
-            "Address": "0x7DD9c5Cba05E151C895FDe1CF355C9A1D5DA6429"
-        },
-        {
-            "Symbol": "REN",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Ethereum",
-            "Address": "0x408e41876cCCDC0F92210600ef50372656052a38"
-        },
-        {
-            "Symbol": "KEEP",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Ethereum",
-            "Address": "0x85Eee30c52B0b379b046Fb0F85F4f3Dc3009aFEC"
-        },
-        {
-            "Symbol": "RUNE",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Thorchain",
-            "Address": "0x0000000000000000000000000000000000000000"
-        },
-        {
-            "Symbol": "FLOW",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Flow",
+            "Blockchain": "Bitcoin",
             "Address": "0x0000000000000000000000000000000000000000"
         },
         {
@@ -271,34 +127,16 @@
             "Address": "0x8A2279d4A90B6fe1C4B30fa660cC9f926797bAA2"
         },
         {
-            "Symbol": "BAT",
+            "Symbol": "COMP",
             "Exchange": "Crypto.com",
             "Blockchain": "Ethereum",
-            "Address": "0x0D8775F648430679A709E98d2b0Cb6250d2887EF"
+            "Address": "0xc00e94Cb662C3520282E6f5717214004A7f26888"
         },
         {
-            "Symbol": "STORJ",
+            "Symbol": "COTI",
             "Exchange": "Crypto.com",
             "Blockchain": "Ethereum",
-            "Address": "0xB64ef51C888972c908CFacf59B47C1AfBC0Ab8aC"
-        },
-        {
-            "Symbol": "SNX",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Ethereum",
-            "Address": "0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F"
-        },
-        {
-            "Symbol": "ANKR",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Ethereum",
-            "Address": "0x8290333ceF9e6D528dD5618Fb97a76f268f3EDD4"
-        },
-        {
-            "Symbol": "QTUM",
-            "Exchange": "Crypto.com",
-            "Blockchain": "Qtum",
-            "Address": "0x0000000000000000000000000000000000000000"
+            "Address": "0xDDB3422497E61e13543BeA06989C0789117555c5"
         },
         {
             "Symbol": "CRO",
@@ -307,16 +145,148 @@
             "Address": "0xA0b73E1Ff0B80914AB6fe0444E65848C4C34450b"
         },
         {
-            "Symbol": "SC",
+            "Symbol": "CRV",
             "Exchange": "Crypto.com",
-            "Blockchain": "Sia",
+            "Blockchain": "Ethereum",
+            "Address": "0xD533a949740bb3306d119CC777fa900bA034cd52"
+        },
+        {
+            "Symbol": "DAI",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "DIA",
+            "Blockchain": "Ethereum",
+            "Address": "0x84cA8bc7997272c7CfB4D0Cd3D55cd942B3c9419"
+        },
+        {
+            "Symbol": "DOGE",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Dogechain",
             "Address": "0x0000000000000000000000000000000000000000"
         },
         {
-            "Symbol": "1INCH",
+            "Symbol": "DOT",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Polkadot",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "DYDX",
+            "Blockchain": "Ethereum",
+            "Address": "0x92D6C1e31e14520e676a687F0a93788B716BEff5"
+        },
+        {
+            "Symbol": "EGLD",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Elrond",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "ENA",
             "Exchange": "Crypto.com",
             "Blockchain": "Ethereum",
-            "Address": "0x111111111117dC0aa78b770fA6A738034120C302"
+            "Address": "0x57e114B691Db790C35207b2e685D4A43181e6061"
+        },
+        {
+            "Symbol": "ENJ",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0xF629cBd94d3791C9250152BD8dfBDF380E2a3B9c"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "ENS",
+            "Blockchain": "Ethereum",
+            "Address": "0xC18360217D8F7Ab5e7c516566761Ea12Ce7F9D72"
+        },
+        {
+            "Symbol": "EOS",
+            "Exchange": "Crypto.com",
+            "Blockchain": "EOS.IO",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "ETC",
+            "Exchange": "Crypto.com",
+            "Blockchain": "EthereumClassic",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "ETH",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "FET",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Fetch",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "FIL",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Filecoin",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "FLOW",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Flow",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "FTM",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Fantom",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "GALA",
+            "Blockchain": "Ethereum",
+            "Address": "0xd1d2Eb1B1e90B638588728b4130137D262C87cae"
+        },
+        {
+            "Symbol": "GEL",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0x15b7c0c907e4C6b9AdaAaabC300C08991D6CEA05"
+        },
+        {
+            "Symbol": "GLM",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0x7DD9c5Cba05E151C895FDe1CF355C9A1D5DA6429"
+        },
+        {
+            "Symbol": "GRT",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0xc944E90C64B2c07662A292be6244BDf05Cda44a7"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "ICP",
+            "Blockchain": "InternetComputer",
+            "Address": "ryjl3-tyaaa-aaaaa-aaaba-cai"
+        },
+        {
+            "Symbol": "KDA",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Kadena",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "KEEP",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0x85Eee30c52B0b379b046Fb0F85F4f3Dc3009aFEC"
         },
         {
             "Symbol": "KNC",
@@ -331,10 +301,328 @@
             "Address": "0x0000000000000000000000000000000000000000"
         },
         {
+            "Exchange": "Crypto.com",
+            "Symbol": "LDO",
+            "Blockchain": "Ethereum",
+            "Address": "0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32"
+        },
+        {
+            "Symbol": "LINK",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0x514910771AF9Ca656af840dff83E8264EcF986CA"
+        },
+        {
+            "Symbol": "LRC",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0xBBbbCA6A901c926F240b89EacB641d8Aec7AEafD"
+        },
+        {
+            "Symbol": "LTC",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Litecoin",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "LUNA",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Terra",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "LYX",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Lukso",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "MANA",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0x0F5D2fB29fb7d3CFeE444a200298f468908cC942"
+        },
+        {
+            "Symbol": "MATIC",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Polygon",
+            "Address": "0x0000000000000000000000000000000000001010"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "MKR",
+            "Blockchain": "Ethereum",
+            "Address": "0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "MNT",
+            "Blockchain": "Mantle",
+            "Address": "0xDeadDeAddeAddEAddeadDEaDDEAdDeaDDeAD0000"
+        },
+        {
+            "Symbol": "MOG",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0xaaeE1A9723aaDB7afA2810263653A34bA2C21C7a"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "MOVR",
+            "Blockchain": "Moonriver",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "NEAR",
+            "Blockchain": "NEAR",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "OMG",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0xd26114cd6EE289AccF82350c8d8487fedB8A0C07"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "ONDO",
+            "Blockchain": "Ethereum",
+            "Address": "0xfAbA6f8e4a5E8Ab82F62fe7C39859FA577269BE3"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "OP",
+            "Blockchain": "Optimism",
+            "Address": "0x4200000000000000000000000000000000000042"
+        },
+        {
+            "Symbol": "ORDI",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Bitcoin",
+            "Address": "b61b0172d95e266c18aea0c624db987e971a5d6d4ebc2aaed85da4642d635735i0"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "PENDLE",
+            "Blockchain": "Arbitrum",
+            "Address": "0x0c880f6761F1af8d9Aa9C466984b80DAb9a8c9e8"
+        },
+        {
+            "Symbol": "POL",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Polygon",
+            "Address": "0x0000000000000000000000000000000000001010"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "PRIME",
+            "Blockchain": "Ethereum",
+            "Address": "0xb23d80f5FefcDDaa212212F028021B41DEd428CF"
+        },
+        {
+            "Symbol": "QTUM",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Qtum",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
             "Symbol": "RARI",
             "Exchange": "Crypto.com",
             "Blockchain": "Ethereum",
             "Address": "0xFca59Cd816aB1eaD66534D82bc21E7515cE441CF"
+        },
+        {
+            "Symbol": "REN",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0x408e41876cCCDC0F92210600ef50372656052a38"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "RENDER",
+            "Blockchain": "Ethereum",
+            "Address": "0x6De037ef9aD2725EB40118Bb1702EBb27e4Aeb24"
+        },
+        {
+            "Symbol": "RUNE",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Thorchain",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "S",
+            "Blockchain": "Sonic",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "SAND",
+            "Blockchain": "Ethereum",
+            "Address": "0x3845badAde8e6dFF049820680d1F14bD3903a5d0"
+        },
+        {
+            "Symbol": "SC",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Sia",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "SDN",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Shiden",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "SEI",
+            "Blockchain": "Sei",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "SHIB",
+            "Blockchain": "Ethereum",
+            "Address": "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE"
+        },
+        {
+            "Symbol": "SNX",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F"
+        },
+        {
+            "Symbol": "SOL",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Solana",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "STG",
+            "Blockchain": "Ethereum",
+            "Address": "0xAf5191B0De278C7286d6C7CC6ab6BB8A73bA2Cd6"
+        },
+        {
+            "Symbol": "STORJ",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0xB64ef51C888972c908CFacf59B47C1AfBC0Ab8aC"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "STRK",
+            "Blockchain": "Starknet",
+            "Address": "0x4718f5a0fc34cc1af16a1cdee98ffb20c31f5cd61d6ab07201858f4287c938d"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "STX",
+            "Blockchain": "Stacks",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "SUI",
+            "Blockchain": "Sui",
+            "Address": "0x2::sui::SUI"
+        },
+        {
+            "Symbol": "SUSHI",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0x6B3595068778DD592e39A122f4f5a5cF09C90fE2"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "TAO",
+            "Blockchain": "Bittensor",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "TIA",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Osmosis",
+            "Address": "ibc/D79E7D83AB399BFFF93433E54FAA480C191248FC556924A2A8351AE2638B3877"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "TON",
+            "Blockchain": "Ton",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "TRX",
+            "Blockchain": "Tron",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "UNI",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"
+        },
+        {
+            "Symbol": "USD",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Fiat",
+            "Address": "840"
+        },
+        {
+            "Symbol": "USDC",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+        },
+        {
+            "Symbol": "USDT",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+        },
+        {
+            "Symbol": "VET",
+            "Exchange": "Crypto.com",
+            "Blockchain": "VeChain",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "WBTC",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "WIF",
+            "Blockchain": "Solana",
+            "Address": "EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm"
+        },
+        {
+            "Exchange": "Crypto.com",
+            "Symbol": "WLD",
+            "Blockchain": "Ethereum",
+            "Address": "0x163f8C2467924be0ae7B5347228CABF260318753"
+        },
+        {
+            "Symbol": "XLM",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Stellar",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "XRP",
+            "Exchange": "Crypto.com",
+            "Blockchain": "XRPL",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "YFI",
+            "Exchange": "Crypto.com",
+            "Blockchain": "Ethereum",
+            "Address": "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e"
         }
     ]
 }

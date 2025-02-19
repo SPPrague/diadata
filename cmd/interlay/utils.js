@@ -3,14 +3,23 @@ function collaterlaratio(issuedtoken, lockedtoken) {
 }
 
 function createResponse(issuedtoken, lockedtoken, fairPrice, ratio) {
-  return {collateral_ratio:{ issued_token: issuedtoken, locked_token: lockedtoken, ratio:ratio},fair_price:fairPrice};
+  return {
+    collateral_ratio: {
+      issued_token: issuedtoken,
+      locked_token: lockedtoken,
+      ratio: ratio,
+    },
+    fair_price: fairPrice,
+    timestamp: Date.now(),
+
+  };
 }
 
 function tokenkey(source, token) {
   return "LSD_" + token;
 }
 
-function pricekey( token) {
+function pricekey(token) {
   return "BASE_PARICE_" + token;
 }
 
@@ -23,18 +32,16 @@ function redis() {
   const redisport = process.env.REDISPORT;
 
   const redispassword = process.env.REDISPASSWORD;
+  let redisurl = "redis://:" + redispassword + "@" + redishost + ":" + redisport;
 
-
-  let redisurl = "redis://:" + "@" + redishost + ":" + redisport;
-
+ 
   if (!isRedisStarted) {
     (async () => {
- 
-      cache =  redis.createClient({ password:redispassword,socket:{host:redishost,port:redisport}});
+      cache = redis.createClient({
+        url: redisurl,
+      });
 
-       
       // cache =  redis.createClient();
-
 
       cache.on("error", (error) => console.error(`Error : ${error}`));
 
@@ -54,40 +61,72 @@ const allowedTokens = [
   //   issuer: "Algem",
 
   // },
+
+  {
+    vtoken: "vMOVR",
+    token: "MOVR",
+    source: "bifrost",
+    issuer: "Bifrost",
+  },
+  {
+    vtoken: "vBNC",
+    token: "BNC",
+    source: "bifrost",
+    issuer: "Bifrost",
+  },
+  {
+    vtoken: "vGLMR",
+    token: "GLMR",
+    source: "bifrost",
+    issuer: "Bifrost",
+  },
+  {
+    vtoken: "vASTR",
+    token: "ASTR",
+    source: "bifrost",
+    issuer: "Bifrost",
+  },
+  {
+    vtoken: "vFIL",
+    token: "FIL",
+    source: "bifrost",
+    issuer: "Bifrost",
+  },
   {
     vtoken: "IBTC",
     token: "BTC",
     source: "interlay",
     issuer: "Interlay",
-
   },
   {
     vtoken: "vKSM",
     token: "KSM",
     source: "bifrost",
     issuer: "Bifrost",
-
+  },
+  {
+    vtoken: "vDOT",
+    token: "DOT",
+    source: "bifrost",
+    issuer: "Bifrost",
   },
   {
     vtoken: "stDOT",
     token: "DOT",
     source: "stDOT",
     issuer: "Lido",
-
   },
   {
     vtoken: "rETH",
     token: "ETH",
     source: "rETH",
     issuer: "RocketPool",
-
   },
   {
     vtoken: "stETH",
     token: "ETH",
     source: "stETH",
     issuer: "Lido",
-
   },
   // {
   //   vtoken: "cbETH",
@@ -105,7 +144,9 @@ const allowedTokens = [
 ];
 
 async function getPrice(asset) {
-  let response = await fetch("https://api.diadata.org/v1/quotation/" + asset);
+  var providerurl = process.env.DIADATA_API || "https://api.diadata.org/v1/quotation/";
+
+  let response = await fetch(providerurl + "/quotation/" + asset);
   let ethprice = await response.json();
   return ethprice.Price;
 }
@@ -114,8 +155,8 @@ module.exports = {
   collaterlaratio: collaterlaratio,
   tokenkey: tokenkey,
   redis: redis,
-  createResponse:createResponse,
-  allowedtokens: allowedtokens,
+  createResponse: createResponse,
+  allowedTokens: allowedTokens,
   getPrice: getPrice,
-  pricekey:pricekey,
+  pricekey: pricekey,
 };

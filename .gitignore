@@ -33,3 +33,7 @@ cmd/services/itinService/itinService
 cmd/services/pairDiscoveryService/pairDiscoveryService
 cmd/services/supplyService/supplyService
 vendor/
+scripts/bifrost/node_modules
+scripts/bifrost/yarn.lock
+
+.testenv.local

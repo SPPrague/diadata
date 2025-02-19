@@ -24,28 +24,36 @@ type RelDatastore interface {
 	GetAssetsBySymbolName(symbol, name string) ([]dia.Asset, error)
 	GetAllAssets(blockchain string) ([]dia.Asset, error)
 	GetFiatAssetBySymbol(symbol string) (asset dia.Asset, err error)
-	IdentifyAsset(asset dia.Asset) ([]dia.Asset, error)
 	GetAssetID(asset dia.Asset) (string, error)
 	GetPage(pageNumber uint32) ([]dia.Asset, bool, error)
 	Count() (uint32, error)
 	SetAssetVolume24H(asset dia.Asset, volume float64, timestamp time.Time) error
 	GetLastAssetVolume24H(asset dia.Asset) (float64, error)
-	GetAssetsWithVOL(numAssets int64, skip int64, onlycex bool, substring string) ([]dia.AssetVolume, error)
+	GetAssetsWithVOL(starttime time.Time, numAssets int64, skip int64, onlycex bool, substring string) ([]dia.AssetVolume, error)
 	GetAssetSource(asset dia.Asset, onlycex bool) ([]string, error)
 	GetAssetsWithVolByBlockchain(starttime time.Time, endtime time.Time, blockchain string) ([]dia.AssetVolume, error)
 
 	// --------------- asset methods for exchanges ---------------
 	SetExchangePair(exchange string, pair dia.ExchangePair, cache bool) error
-	GetExchangePair(exchange string, foreignname string) (exchangepair dia.ExchangePair, err error)
+	GetExchangePair(exchange string, foreignname string, caseSensitive bool) (exchangepair dia.ExchangePair, err error)
+	GetExchangePairSeparator(exchange string) (string, error)
 	GetPairsForExchange(exchange dia.Exchange, filterVerified bool, verified bool) ([]dia.ExchangePair, error)
 	GetPairsForAsset(asset dia.Asset, filterVerified bool, verified bool) ([]dia.ExchangePair, error)
+	GetExchangepairsByAsset(asset dia.Asset, exchange string, basetoken bool) ([]dia.ExchangePair, error)
 	GetExchangePairSymbols(exchange string) ([]dia.ExchangePair, error)
 	GetNumPairs(exchange dia.Exchange) (int, error)
 	SetExchangeSymbol(exchange string, symbol string) error
+	GetExchangeSymbol(exchange string, symbol string) (dia.Asset, error)
 	GetExchangeSymbols(exchange string, substring string) ([]string, error)
 	GetUnverifiedExchangeSymbols(exchange string) ([]string, error)
 	VerifyExchangeSymbol(exchange string, symbol string, assetID string) (bool, error)
 	GetExchangeSymbolAssetID(exchange string, symbol string) (string, bool, error)
+	GetAllExchangeAssets(verified bool) ([]dia.Asset, error)
+
+	// ----------------- Historical quotations methods -------------------
+	SetHistoricalQuotation(quotation AssetQuotation) error
+	GetHistoricalQuotations(asset dia.Asset, starttime time.Time, endtime time.Time) ([]AssetQuotation, error)
+	GetLastHistoricalQuotationTimestamp(asset dia.Asset) (time.Time, error)
 
 	// ----------------- exchange methods -------------------
 	SetExchange(exchange dia.Exchange) error
@@ -55,9 +63,13 @@ type RelDatastore interface {
 
 	// ----------------- pool methods -------------------
 	SetPool(pool dia.Pool) error
+	SetScraperIndex(exchange string, scraperType string, indexType string, index int64) error
+	GetScraperIndex(exchange string, scraperType string) (string, int64, error)
+	GetAllDEXPoolsCount() (map[string]int, error)
 	GetPoolByAddress(blockchain string, address string) (pool dia.Pool, err error)
 	GetAllPoolAddrsExchange(exchange string, liquiThreshold float64) ([]string, error)
 	GetAllPoolsExchange(exchange string, liquiThreshold float64) ([]dia.Pool, error)
+	GetPoolsByAsset(asset dia.Asset, liquidityThreshold float64, liquidityThresholdUSD float64) ([]dia.Pool, error)
 
 	// ----------------- blockchain methods -------------------
 	SetBlockchain(blockchain dia.BlockChain) error
@@ -67,57 +79,10 @@ type RelDatastore interface {
 
 	// ------ Caching ------
 	SetAssetCache(asset dia.Asset) error
-	GetAssetCache(assetID string) (dia.Asset, error)
+	GetAssetCache(blockchain string, address string) (dia.Asset, error)
 	SetExchangePairCache(exchange string, pair dia.ExchangePair) error
 	GetExchangePairCache(exchange string, foreignName string) (dia.ExchangePair, error)
 	CountCache() (uint32, error)
-
-	// ---------------- NFT methods -------------------
-	// NFT class methods
-	SetNFTClass(nftClass dia.NFTClass) error
-	GetAllNFTClasses(blockchain string) ([]dia.NFTClass, error)
-	GetNFTClasses(limit, offset uint64) ([]dia.NFTClass, error)
-	GetNFTClass(address string, blockchain string) (dia.NFTClass, error)
-	GetNFTClassID(address string, blockchain string) (string, error)
-	GetNFTClassByID(id string) (dia.NFTClass, error)
-	GetNFTClassesByNameSymbol(searchstring string) ([]dia.NFTClass, error)
-	UpdateNFTClassCategory(nftclassID string, category string) (bool, error)
-	GetNFTCategories() ([]string, error)
-
-	// NFT methods
-	SetNFT(nft dia.NFT) error
-	GetNFT(address string, blockchain string, tokenID string) (dia.NFT, error)
-	GetNFTID(address string, blockchain string, tokenID string) (string, error)
-
-	// NFT trading and bidding methods
-	SetNFTTrade(trade dia.NFTTrade) error
-	SetNFTTradeToTable(trade dia.NFTTrade, table string) error
-	GetNFTTrades(address string, blockchain string, tokenID string, starttime time.Time, endtime time.Time) ([]dia.NFTTrade, error)
-	GetNFTTradesCollection(address string, blockchain string, starttime time.Time, endtime time.Time) ([]dia.NFTTrade, error)
-	GetNFTOffers(address string, blockchain string, tokenID string) ([]dia.NFTOffer, error)
-	GetNFTBids(address string, blockchain string, tokenID string) ([]dia.NFTBid, error)
-	GetNFTFloor(nftclass dia.NFTClass, timestamp time.Time, floorWindowSeconds time.Duration, noBundles bool, exchange string) (float64, error)
-	GetNFTFloorLevel(nftclass dia.NFTClass, timestamp time.Time, floorWindowSeconds time.Duration, currencies []dia.Asset, level float64, noBundles bool, exchange string) (float64, error)
-	GetNFTFloorRecursive(nftClass dia.NFTClass, timestamp time.Time, floorWindowSeconds time.Duration, stepBackLimit int, noBundles bool, exchange string) (float64, error)
-	GetNFTFloorRange(nftClass dia.NFTClass, starttime time.Time, endtime time.Time, floorWindowSeconds time.Duration, stepBackLimit int, noBundles bool, exchange string) ([]float64, error)
-	GetLastBlockheightTopshot(upperBound time.Time) (uint64, error)
-	SetNFTBid(bid dia.NFTBid) error
-	GetLastNFTBid(address string, blockchain string, tokenID string, blockNumber uint64, blockPosition uint) (dia.NFTBid, error)
-	GetLastBlockNFTBid(nftclass dia.NFTClass) (uint64, error)
-	GetLastBlockNFTOffer(nftclass dia.NFTClass) (uint64, error)
-	GetLastBlockNFTTrade(nftclass dia.NFTClass) (uint64, error)
-	SetNFTOffer(offer dia.NFTOffer) error
-	GetLastNFTOffer(address string, blockchain string, tokenID string, blockNumber uint64, blockPosition uint) (offer dia.NFTOffer, err error)
-
-	// NFT stats
-	GetTopNFTsEth(numCollections int, offset int64, exchanges []string, starttime time.Time, endtime time.Time) ([]struct {
-		Name       string
-		Address    string
-		Blockchain string
-		Volume     float64
-	}, error)
-	GetNumNFTTrades(address string, blockchain string, exchange string, starttime time.Time, endtime time.Time) (int, error)
-	GetNFTVolume(address string, blockchain string, exchange string, starttime time.Time, endtime time.Time) (float64, error)
 
 	// General methods
 	GetKeys(table string) ([]string, error)
@@ -133,66 +98,102 @@ type RelDatastore interface {
 	GetBlockData(blockchain string, blocknumber int64) (dia.BlockData, error)
 	GetLastBlockBlockscraper(blockchain string) (int64, error)
 
-	//NFT exchange methods
-
-	GetAllNFTExchanges() (exchanges []dia.NFTExchange, err error)
-	GetNFTExchange(name string) (exchange dia.Exchange, err error)
-	SetNFTExchange(exchange dia.NFTExchange) (err error)
-	GetCollectionCountByExchange(exchange string) (int64, error)
-	Get24HoursNFTExchangeVolume(exchange dia.NFTExchange) (float64, error)
-	Get24HoursNFTExchangeTrades(exchange dia.NFTExchange) (int64, error)
-
 	//Oracle builder
 	SetKeyPair(publickey string, privatekey string) error
 	GetKeyPairID(publickey string) string
 	GetFeederAccessByID(id string) (owner string)
 	GetFeederByID(id string) (owner string)
-	SetOracleConfig(address, keypairID, creator, symbols, chainID, frequency, sleepseconds, deviationpermille, blockchainnode string) error
+	SetOracleConfig(ctx context.Context, customerId, address, feederID, owner, feederAddress, symbols, feedSelection, chainID, frequency, sleepseconds, deviationpermille, blockchainnode, mandatoryFrequency, name string, draft, billable bool) error
 	SetFeederConfig(feederid, oracleconfigid string) error
 	GetFeederID(address string) (feederId string)
 	GetFeederLimit(owner string) (limit int)
-	GetTotalFeeder(owner string) (total int)
-	GetOracleConfig(address string) (oracleconfig dia.OracleConfig, err error)
+	GetTotalOracles(customerid string) (total int)
+	GetOracleConfig(address, chainid string) (oracleconfig dia.OracleConfig, err error)
 	ChangeOracleState(feederID string, active bool) (err error)
+	DeleteOracle(feederID string) (err error)
 	GetOraclesByOwner(owner string) (oracleconfigs []dia.OracleConfig, err error)
-	GetAllFeeders() (oracleconfigs []dia.OracleConfig, err error)
+	GetOraclesByCustomer(customerId string) (oracleconfigs []dia.OracleConfig, err error)
+
+	GetAllFeeders(bool, bool) (oracleconfigs []dia.OracleConfig, err error)
+	GetFeederResources() (addresses []string, err error)
+	GetOracleUpdates(address string, chainid string, offset int) ([]dia.OracleUpdate, error)
+	GetOracleUpdateCount(address string, chainid string, symbol string) (int64, error)
+	UpdateFeederAddressCheckSum(oracleaddress string) error
+	GetExpiredFeeders() (oracleconfigs []dia.OracleConfig, err error)
+	GetFeeder(feederID string) (oracleconfig dia.OracleConfig, err error)
+
+	GetDayWiseUpdates(address string, chainid string) ([]dia.FeedUpdates, float64, float64, error)
+	GetOracleLastUpdate(address, chainid, symbol string) (time.Time, string, error)
+	GetOracleUpdatesByTimeRange(address, chainid, symbol string, offset int, startTime, endTime time.Time) ([]dia.OracleUpdate, error)
+
+	// Asset List methods
+	SetAssetList(asset dia.AssetList) error
+	GetAssetListBySymbol(symbol string, listname string) ([]dia.AssetList, error)
+	DeleteAssetList(sheetName string) error
+
+	CreateCustomer(email string, name string, customerPlan int, paymentStatus string, paymentSource string, numberOfDataFeeds int, walletPublicKeys []string) error
+	AddWalletKeys(owner, username, accessLevel string, publicKey []string, customerId string) error
+
+	GetTempWalletRequest(ctx context.Context, publicKey, customerId string) (keyId int, accessLevel, username string, err error)
+	DeleteTempWalletRequest(ctx context.Context, keyId string) (err error)
+
+	AddTempWalletKeys(owner, username, accessLevel string, publicKey []string) error
+
+	UpdateAccessLevel(username, accessLevel, publicKey string) error
+	RemoveWalletKeys(publicKey []string) error
+	GetCustomerIDByWalletPublicKey(publicKey string) (int, error)
+	GetCustomerByPublicKey(publicKey string) (*Customer, error)
+	GetPendingPublicKeyByCustomer(ctx context.Context, customerId string) (pk []PublicKey, err error)
+
+	GetPendingInvites(ctx context.Context, publicKey string) (pk []PublicKey, err error)
+
+	UpdateCustomerPlan(ctx context.Context, customerID int, customerPlan int, paymentSource string, lastPayment string, payerAddress string) error
+	GetAccessLevel(publicKey string) (string, error)
+
+	GetAllChains() (chainconfigs []dia.ChainConfig, err error)
+	GetTotalGasSpend(address string, chainid string) (float64, error)
+	GetBalanceRemaining(address string, chainid string) (float64, error)
+	GetLastOracleUpdate(address string, chainid string) ([]dia.OracleUpdate, error)
+	GetLastPaymentByEndUser(endUser string) (LoopPaymentTransferProcessed, error)
+
+	GetPlan(ctx context.Context, planID int) (*Plan, error)
+	GetLastPaymentByAgreementID(agreementID string) (*LoopPaymentTransferProcessed, error)
+	InsertLoopPaymentTransferProcessed(ctx context.Context, record LoopPaymentTransferProcessed) error
+	InsertLoopPaymentResponse(ctx context.Context, response LoopPaymentResponse) error
+	GetLoopPaymentResponseByAgreementID(ctx context.Context, agreementID string) (*LoopPaymentResponse, error)
+	GetLoopPaymentResponseByCustomerID(ctx context.Context, customerID string) (*LoopPaymentResponse, error)
+	ChangeEcosystemConfig(oracleAddress string, enable bool) (err error)
 }
 
 const (
 
 	// postgres tables
-	assetTable              = "asset"
-	assetIdent              = "assetIdent"
-	exchangepairTable       = "exchangepair"
-	exchangesymbolTable     = "exchangesymbol"
-	poolTable               = "pool"
-	poolassetTable          = "poolasset"
-	exchangeTable           = "exchange"
-	nftExchangeTable        = "nftexchange"
-	chainconfigTable        = "chainconfig"
-	blockchainTable         = "blockchain"
-	assetVolumeTable        = "assetvolume"
-	aggregatedVolumeTable   = "aggregatedvolume"
-	tradesDistributionTable = "tradesdistribution"
-
+	assetTable               = "asset"
+	assetIdent               = "assetIdent"
+	exchangepairTable        = "exchangepair"
+	exchangesymbolTable      = "exchangesymbol"
+	poolTable                = "pool"
+	poolassetTable           = "poolasset"
+	scraperCronjobStateTable = "scraper_cronjob_state"
+	exchangeTable            = "exchange"
+	chainconfigTable         = "chainconfig"
+	blockchainTable          = "blockchain"
+	assetVolumeTable         = "assetvolume"
+	historicalQuotationTable = "historicalquotation"
+	pollingTable             = "polling"
+	swapRelationTable        = "swap_relation"
 	// cache keys
 	keyAssetCache        = "dia_asset_"
 	keyExchangePairCache = "dia_exchangepair_"
 
-	blockdataTable       = "blockdata"
-	nftcategoryTable     = "nftcategory"
-	nftclassTable        = "nftclass"
-	nftTable             = "nft"
-	NfttradeCurrTable    = "nfttradecurrent"
-	NfttradeSumeriaTable = "nfttradesumeria"
-	nftbidTable          = "nftbid"
-	nftofferTable        = "nftoffer"
-	scrapersTable        = "scrapers"
-	keypairTable         = "keypair"
-	oracleconfigTable    = "oracleconfig"
-	feederconfigTable    = "feederconfig"
-	feederaccessTable    = "feederaccess"
-	feederResourceTable  = "feederresource"
+	blockdataTable      = "blockdata"
+	scrapersTable       = "scrapers"
+	keypairTable        = "keypair"
+	oracleconfigTable   = "oracleconfig"
+	feederconfigTable   = "feederconfig"
+	feederaccessTable   = "feederaccess"
+	feederResourceTable = "feederresource"
+	feederupdatesTable  = "feederupdates"
 
 	// time format for blockchain genesis dates
 	// timeFormatBlockchain = "2006-01-02"
@@ -203,6 +204,7 @@ type RelDB struct {
 	URI            string
 	postgresClient *pgxpool.Pool
 	redisClient    *redis.Client
+	redisPipe      redis.Pipeliner
 	pagesize       uint32
 }
 
@@ -224,9 +226,12 @@ func NewCachingLayer() (*RelDB, error) {
 
 // NewRelDataStoreWithOptions returns a postgres datastore and/or redis caching layer.
 func NewRelDataStoreWithOptions(withPostgres bool, withRedis bool) (*RelDB, error) {
-	var postgresClient *pgxpool.Pool
-	var redisClient *redis.Client
-	var url string
+	var (
+		postgresClient *pgxpool.Pool
+		redisClient    *redis.Client
+		redisPipe      redis.Pipeliner
+		url            string
+	)
 
 	if withPostgres {
 		url = db.GetPostgresURL()
@@ -234,8 +239,9 @@ func NewRelDataStoreWithOptions(withPostgres bool, withRedis bool) (*RelDB, erro
 	}
 	if withRedis {
 		redisClient = db.GetRedisClient()
+		redisPipe = redisClient.TxPipeline()
 	}
-	return &RelDB{url, postgresClient, redisClient, 32}, nil
+	return &RelDB{url, postgresClient, redisClient, redisPipe, 32}, nil
 }
 
 // GetKeys returns a slice of strings holding the names of the keys of @table in postgres

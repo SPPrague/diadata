@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"math/big"
 	"net/http"
 	"strconv"
@@ -23,11 +24,14 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+var diaBaseUrl string
+
 func main() {
 	key := utils.Getenv("PRIVATE_KEY", "")
 	key_password := utils.Getenv("PRIVATE_KEY_PASSWORD", "")
 	deployedContract := utils.Getenv("DEPLOYED_CONTRACT", "")
 	blockchainNode := utils.Getenv("BLOCKCHAIN_NODE", "")
+	coingeckoApiKey := utils.Getenv("COINGECKO_API_KEY", "")
 	sleepSeconds, err := strconv.Atoi(utils.Getenv("SLEEP_SECONDS", "120"))
 	if err != nil {
 		log.Fatalf("Failed to parse sleepSeconds: %v")
@@ -44,6 +48,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to parse deviationPermille: %v")
 	}
+	diaBaseUrl = utils.Getenv("DIA_BASE_URL", "https://api.diadata.org")
 
 	addresses := []string{
 		"0x0000000000000000000000000000000000000000",//ASTR
@@ -53,7 +58,6 @@ func main() {
 		"0x0000000000000000000000000000000000000000",//BTC
 		"0x0000000000000000000000000000000000000000",//ETH
 		"0x6B175474E89094C44Da98b954EedeAC495271d0F",//DAI
-		"0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56",//BUSD
 		"0xdAC17F958D2ee523a2206206994597C13D831ec7",//USDT
 	}
 	blockchains := []string{
@@ -64,8 +68,17 @@ func main() {
 		"Bitcoin",           //BTC
 		"Ethereum",          //ETH
 		"Ethereum",					 //DAI
-		"BinanceSmartChain", //BUSD
 		"Ethereum",          //USDT
+	}
+	cgNames := []string{
+		"astar",
+		"usd-coin",
+		"polkadot",
+		"binancecoin",
+		"bitcoin",
+		"ethereum",
+		"dai",
+		"tether",
 	}
 	oldPrices := make(map[int]float64)
 
@@ -100,8 +113,9 @@ func main() {
 				for i, address := range addresses {
 					blockchain := blockchains[i]
 					oldPrice := oldPrices[i]
+					coingeckoName := cgNames[i]
 					log.Println("old price", oldPrice)
-					oldPrice, err = periodicOracleUpdateHelper(oldPrice, deviationPermille, auth, contract, conn, blockchain, address)
+					oldPrice, err = periodicOracleUpdateHelper(oldPrice, deviationPermille, auth, contract, conn, blockchain, address, coingeckoName, coingeckoApiKey)
 					oldPrices[i] = oldPrice
 					if err != nil {
 						log.Println(err)
@@ -114,7 +128,7 @@ func main() {
 	select {}
 }
 
-func periodicOracleUpdateHelper(oldPrice float64, deviationPermille int, auth *bind.TransactOpts, contract *diaOracleServiceV2.DIAOracleV2, conn *ethclient.Client, blockchain string, address string) (float64, error) {
+func periodicOracleUpdateHelper(oldPrice float64, deviationPermille int, auth *bind.TransactOpts, contract *diaOracleServiceV2.DIAOracleV2, conn *ethclient.Client, blockchain string, address string, coingeckoName, coingeckoApiKey string) (float64, error) {
 
 	newPrice := 0.0
 	// Get quotation for token and update Oracle
@@ -129,7 +143,18 @@ func periodicOracleUpdateHelper(oldPrice float64, deviationPermille int, auth *b
 	// stablecoin 20mins period
 	if address == "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" || address == "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56" {
 		log.Printf("Entered graphql mode")
-		rawPrice, _, err := getGraphqlAssetQuotationFromDia(blockchain, address, 1200)
+		rawPrice, err := getGraphqlAssetQuotationFromDia(blockchain, address, 1200)
+		if err != nil {
+			log.Fatalf("Failed to retrieve %s quotation data from DIA: %v", address, err)
+			return oldPrice, err
+		}
+		newPrice = rawPrice
+	}
+
+	// stablecoin gql
+	if address == "0x6B175474E89094C44Da98b954EedeAC495271d0F" {
+		log.Printf("Entered graphql mode")
+		rawPrice, err := getGraphqlAssetQuotationFromDia(blockchain, address, 120)
 		if err != nil {
 			log.Fatalf("Failed to retrieve %s quotation data from DIA: %v", address, err)
 			return oldPrice, err
@@ -138,16 +163,33 @@ func periodicOracleUpdateHelper(oldPrice float64, deviationPermille int, auth *b
 	}
 
 	if (newPrice > (oldPrice * (1 + float64(deviationPermille)/1000))) || (newPrice < (oldPrice * (1 - float64(deviationPermille)/1000))) {
-		// USDC and BUSD emergency brake
-		if address == "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" || address == "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56" {
-			log.Printf("brake check new price: %d\n", newPrice)
+		// USDC emergency brake
+		if address == "0xe9e7CEA3DedcA5984780Bafc599bD69ADd087D56" {
+			log.Printf("brake check new price: %f\n", newPrice)
 			if newPrice < 0.99 || newPrice > 1.01 {
-				log.Printf("Error! Price read from API for asset %s is: %d", address, newPrice)
+				log.Printf("Error! Price read from API for asset %s-%s is: %d", blockchain, address, newPrice)
 				return oldPrice, nil
 			}
 		}
 		log.Println("Entering deviation based update zone")
 		rawQ.Price = newPrice
+
+		// check coingecko before sending out an update transaction
+		cgPrice, err := getCoingeckoPrice(coingeckoName, coingeckoApiKey)
+		if err != nil {
+			return oldPrice, err
+		}
+		if cgPrice == 0.0 {
+			log.Printf("Error! Coingecko API returned price 0.0.")
+			return oldPrice, nil
+		}
+		if (math.Abs(cgPrice - rawQ.Price) / cgPrice) > 0.2 {
+			// Error case, stop transaction from happening
+			log.Printf("Error! Price %f for asset %s-%s out of coingecko range %f.", rawQ.Price, blockchain, address, cgPrice)
+			return oldPrice, nil
+		}
+		log.Printf("Price %f for asset %s-%s in coingecko range %f.", rawQ.Price, blockchain, address, cgPrice)
+
 		err = updateQuotation(rawQ, auth, contract, conn)
 		if err != nil {
 			log.Fatalf("Failed to update DIA Oracle: %v", err)
@@ -209,21 +251,19 @@ func updateOracle(
 	}
 
 	// Get 110% of the gas price
-	fmt.Println(gasPrice)
 	fGas := new(big.Float).SetInt(gasPrice)
 	fGas.Mul(fGas, big.NewFloat(1.1))
 	gasPrice, _ = fGas.Int(nil)
-	fmt.Println(gasPrice)
 	// Write values to smart contract
 	tx, err := contract.SetValue(&bind.TransactOpts{
 		From:     auth.From,
 		Signer:   auth.Signer,
+		GasLimit: 1000725,
 		GasPrice: gasPrice,
 	}, key, big.NewInt(value), big.NewInt(timestamp))
 	if err != nil {
 		return err
 	}
-	fmt.Println(tx.GasPrice())
 	log.Printf("price: %d\n", value)
 	log.Printf("key: %s\n", key)
 	log.Printf("nonce: %d\n", tx.Nonce())
@@ -234,7 +274,7 @@ func updateOracle(
 }
 
 func getAssetQuotationFromDia(blockchain, address string) (*models.Quotation, error) {
-	response, err := http.Get("https://api.diadata.org/v1/assetQuotation/" + blockchain + "/" + address)
+	response, err := http.Get(diaBaseUrl + "/v1/assetQuotation/" + blockchain + "/" + address)
 	if err != nil {
 		return nil, err
 	}
@@ -255,31 +295,32 @@ func getAssetQuotationFromDia(blockchain, address string) (*models.Quotation, er
 	return &quotation, nil
 }
 
-func getGraphqlAssetQuotationFromDia(blockchain, address string, blockDuration int) (float64, string, error) {
+func getGraphqlAssetQuotationFromDia(blockchain, address string, blockDuration int) (float64, error) {
 	currentTime := time.Now()
 	starttime := currentTime.Add(time.Duration(-blockDuration * 2) * time.Second)
 	type Response struct {
-		GetChart []struct {
+		GetFeed []struct {
 			Name   string    `json:"Name"`
-			Symbol string    `json:"Symbol"`
 			Time   time.Time `json:"Time"`
 			Value  float64   `json:"Value"`
-		} `json:"GetChart"`
+		} `json:"GetFeed"`
 	}
-	client := gql.NewClient("https://api.diadata.org/graphql/query")
+	client := gql.NewClient(diaBaseUrl + "/graphql/query")
 	req := gql.NewRequest(`
     query  {
-		 GetChart(
-		 	filter: "mair", 
-			Symbol:"Asset",
-			BlockDurationSeconds: ` + strconv.Itoa(blockDuration) + `, 
+		 GetFeed(
+		 	Filter: "mair", 
+			BlockSizeSeconds: ` + strconv.Itoa(blockDuration) + `, 
 			BlockShiftSeconds: ` + strconv.Itoa(blockDuration) + `,
 			StartTime: ` + strconv.FormatInt(starttime.Unix(), 10) + `, 
 			EndTime: ` + strconv.FormatInt(currentTime.Unix(), 10) + `, 
-			Address: "` + address + `", 
-			BlockChain: "` + blockchain + `") {
+			FeedSelection: [{
+			  Address: "` + address + `", 
+			  Blockchain: "` + blockchain + `"
+		  },
+		  ],
+		  ) {
 				Name
-				Symbol
 				Time
 				Value
 	  	}
@@ -288,12 +329,12 @@ func getGraphqlAssetQuotationFromDia(blockchain, address string, blockDuration i
 	ctx := context.Background()
 	var r Response
 	if err := client.Run(ctx, req, &r); err != nil {
-		return 0.0, "", err
+		return 0.0, err
 	}
-	if len(r.GetChart) == 0 {
-		return 0.0, "", errors.New("no results")
+	if len(r.GetFeed) == 0 {
+		return 0.0, errors.New("no results")
 	}
-	return r.GetChart[len(r.GetChart)-1].Value, r.GetChart[len(r.GetChart)-1].Symbol, nil
+	return r.GetFeed[len(r.GetFeed)-1].Value, nil
 }
 
 func getGasSuggestion() (*big.Int, error) {
@@ -311,8 +352,28 @@ func getGasSuggestion() (*big.Int, error) {
 		return nil, err
 	}
 	
-	gasSuggestion := gjson.Get(string(contents), "data.fast")
+	gasSuggestion := gjson.Get(string(contents), "data.average")
 	retval := big.NewInt(gasSuggestion.Int())
 
 	return retval, nil
+}
+
+func getCoingeckoPrice(assetName, coingeckoApiKey string) (float64, error) {
+	url := "https://pro-api.coingecko.com/api/v3/simple/price?ids=" + assetName + "&vs_currencies=usd&x_cg_pro_api_key=" + coingeckoApiKey
+	response, err := http.Get(url)
+	if err != nil {
+		return 0.0, err
+	}
+	
+	defer response.Body.Close()
+	if 200 != response.StatusCode {
+		return 0.0, fmt.Errorf("Error on coingecko API call with return code %d", response.StatusCode)
+	}
+
+	contents, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return 0.0, err
+	}
+	price := gjson.Get(string(contents), assetName + ".usd").Float()
+	return price, nil
 }

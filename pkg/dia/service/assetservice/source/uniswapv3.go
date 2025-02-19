@@ -1,12 +1,15 @@
 package source
 
 import (
+	"context"
 	"math/big"
 	"strconv"
 	"strings"
+	"time"
 
 	uniswapcontract "github.com/diadata-org/diadata/pkg/dia/scraper/exchange-scrapers/uniswap"
 	uniswapcontractv3 "github.com/diadata-org/diadata/pkg/dia/scraper/exchange-scrapers/uniswapv3"
+	models "github.com/diadata-org/diadata/pkg/model"
 
 	"github.com/diadata-org/diadata/pkg/utils"
 
@@ -16,20 +19,23 @@ import (
 	"github.com/ethereum/go-ethereum/ethclient"
 )
 
+var numBlocksQuery = uint64(1000)
+
 type UniswapV3AssetSource struct {
 	RestClient *ethclient.Client
 	WsClient   *ethclient.Client
+	relDB      *models.RelDB
 	// signaling channels for session initialization and finishing
 	assetChannel    chan dia.Asset
 	doneChannel     chan bool
-	blockchain      string
+	exchange        dia.Exchange
 	startBlock      uint64
 	factoryContract string
 	waitTime        int
 }
 
 // NewUniswapV3AssetSource returns a new UniswapV3AssetSource
-func NewUniswapV3AssetSource(exchange dia.Exchange) *UniswapV3AssetSource {
+func NewUniswapV3AssetSource(exchange dia.Exchange, relDB *models.RelDB) *UniswapV3AssetSource {
 	log.Info("NewUniswapV3Scraper ", exchange.Name)
 	log.Info("NewUniswapV3Scraper Address ", exchange.Contract)
 
@@ -37,11 +43,21 @@ func NewUniswapV3AssetSource(exchange dia.Exchange) *UniswapV3AssetSource {
 
 	switch exchange.Name {
 	case dia.UniswapExchangeV3:
-		uas = makeUniswapV3AssetSource(exchange, "", "", "200", uint64(12369621))
+		uas = makeUniswapV3AssetSource(exchange, "", "", relDB, "200", uint64(12369621))
 	case dia.UniswapExchangeV3Polygon:
-		uas = makeUniswapV3AssetSource(exchange, "", "", "200", uint64(22757913))
+		uas = makeUniswapV3AssetSource(exchange, "", "", relDB, "200", uint64(22757913))
 	case dia.UniswapExchangeV3Arbitrum:
-		uas = makeUniswapV3AssetSource(exchange, "", "", "200", uint64(165))
+		uas = makeUniswapV3AssetSource(exchange, "", "", relDB, "200", uint64(165))
+	case dia.UniswapExchangeV3Base:
+		uas = makeUniswapV3AssetSource(exchange, "", "", relDB, "200", uint64(1371680))
+	case dia.UniswapExchangeV3Celo:
+		uas = makeUniswapV3AssetSource(exchange, "", "", relDB, "200", uint64(13916355))
+	case dia.PanCakeSwapExchangeV3:
+		uas = makeUniswapV3AssetSource(exchange, "", "", relDB, "200", uint64(26956207))
+	case dia.RamsesV2Exchange:
+		uas = makeUniswapV3AssetSource(exchange, "", "", relDB, "200", uint64(90593047))
+	case dia.NileV2Exchange:
+		uas = makeUniswapV3AssetSource(exchange, "", "", relDB, "200", uint64(1768866))
 	}
 
 	go func() {
@@ -52,7 +68,7 @@ func NewUniswapV3AssetSource(exchange dia.Exchange) *UniswapV3AssetSource {
 }
 
 // makeUniswapV3AssetSource returns a uniswap asset source.
-func makeUniswapV3AssetSource(exchange dia.Exchange, restDial string, wsDial string, waitMilliseconds string, startBlock uint64) *UniswapV3AssetSource {
+func makeUniswapV3AssetSource(exchange dia.Exchange, restDial string, wsDial string, relDB *models.RelDB, waitMilliseconds string, startBlock uint64) *UniswapV3AssetSource {
 	var (
 		restClient   *ethclient.Client
 		wsClient     *ethclient.Client
@@ -83,9 +99,10 @@ func makeUniswapV3AssetSource(exchange dia.Exchange, restDial string, wsDial str
 	uas = &UniswapV3AssetSource{
 		RestClient:      restClient,
 		WsClient:        wsClient,
+		relDB:           relDB,
 		assetChannel:    assetChannel,
 		doneChannel:     doneChannel,
-		blockchain:      exchange.BlockChain.Name,
+		exchange:        exchange,
 		startBlock:      startBlock,
 		factoryContract: exchange.Contract,
 		waitTime:        waitTime,
@@ -100,43 +117,69 @@ func (uas *UniswapV3AssetSource) fetchAssets() {
 
 	log.Info("get pool creations from address: ", uas.factoryContract)
 	poolsCount := 0
+	var blocknumber int64
 	checkMap := make(map[string]struct{})
+	_, startblock, err := uas.relDB.GetScraperIndex(uas.exchange.Name, dia.SCRAPER_TYPE_ASSETCOLLECTOR)
+	if err != nil {
+		log.Error("GetScraperIndex: ", err)
+	} else {
+		uas.startBlock = uint64(startblock)
+	}
+
 	contract, err := uniswapcontractv3.NewUniswapV3Filterer(common.HexToAddress(uas.factoryContract), uas.WsClient)
 	if err != nil {
 		log.Error(err)
 	}
 
-	poolCreated, err := contract.FilterPoolCreated(
-		&bind.FilterOpts{Start: uas.startBlock},
-		[]common.Address{},
-		[]common.Address{},
-		[]*big.Int{},
-	)
+	currentBlockNumber, err := uas.RestClient.BlockNumber(context.Background())
 	if err != nil {
-		log.Error("filter pool created: ", err)
+		log.Error("GetBlockNumber: ", err)
 	}
 
-	for poolCreated.Next() {
-		poolsCount++
-		log.Info("pools count: ", poolsCount)
-		// Don't repeat sending already sent assets
-		if _, ok := checkMap[poolCreated.Event.Token0.Hex()]; !ok {
-			checkMap[poolCreated.Event.Token0.Hex()] = struct{}{}
-			asset, err := uas.GetAssetFromAddress(poolCreated.Event.Token0)
-			if err != nil {
-				log.Warn("cannot fetch asset from address ", poolCreated.Event.Token0.Hex())
-			}
-			uas.assetChannel <- asset
+	endblock := utils.Min(uint64(uas.startBlock)+numBlocksQuery, currentBlockNumber)
+	log.Infof("startblock -- endblock: %v -- %v", uas.startBlock, endblock)
+
+	for uas.startBlock <= currentBlockNumber {
+		poolCreated, err := contract.FilterPoolCreated(
+			&bind.FilterOpts{Start: uas.startBlock, End: &endblock},
+			[]common.Address{},
+			[]common.Address{},
+			[]*big.Int{},
+		)
+		if err != nil {
+			log.Error("filter pool created: ", err)
 		}
-		if _, ok := checkMap[poolCreated.Event.Token1.Hex()]; !ok {
-			checkMap[poolCreated.Event.Token1.Hex()] = struct{}{}
-			asset, err := uas.GetAssetFromAddress(poolCreated.Event.Token1)
-			if err != nil {
-				log.Warn("cannot fetch asset from address ", poolCreated.Event.Token1.Hex())
+		for poolCreated.Next() {
+			time.Sleep(time.Duration(uas.waitTime) * time.Millisecond)
+			poolsCount++
+			log.Info("pools count: ", poolsCount)
+			blocknumber = int64(poolCreated.Event.Raw.BlockNumber)
+			// Don't repeat sending already sent assets
+			if _, ok := checkMap[poolCreated.Event.Token0.Hex()]; !ok {
+				checkMap[poolCreated.Event.Token0.Hex()] = struct{}{}
+				asset, err := uas.GetAssetFromAddress(poolCreated.Event.Token0)
+				if err != nil {
+					log.Warnf("cannot fetch asset from address %s: %v", poolCreated.Event.Token0.Hex(), err)
+				}
+				uas.assetChannel <- asset
 			}
-			uas.assetChannel <- asset
+			if _, ok := checkMap[poolCreated.Event.Token1.Hex()]; !ok {
+				checkMap[poolCreated.Event.Token1.Hex()] = struct{}{}
+				asset, err := uas.GetAssetFromAddress(poolCreated.Event.Token1)
+				if err != nil {
+					log.Warnf("cannot fetch asset from address %s: %v", poolCreated.Event.Token1.Hex(), err)
+				}
+				uas.assetChannel <- asset
+			}
 		}
+		err = uas.relDB.SetScraperIndex(uas.exchange.Name, dia.SCRAPER_TYPE_ASSETCOLLECTOR, dia.INDEX_TYPE_BLOCKNUMBER, blocknumber)
+		if err != nil {
+			log.Error("SetScraperIndex: ", err)
+		}
+		endblock += numBlocksQuery
+		uas.startBlock += numBlocksQuery
 	}
+
 	uas.doneChannel <- true
 }
 
@@ -167,7 +210,7 @@ func (uas *UniswapV3AssetSource) GetAssetFromAddress(address common.Address) (as
 		Symbol:     symbol,
 		Name:       name,
 		Address:    address.Hex(),
-		Blockchain: uas.blockchain,
+		Blockchain: uas.exchange.BlockChain.Name,
 		Decimals:   decimals,
 	}
 

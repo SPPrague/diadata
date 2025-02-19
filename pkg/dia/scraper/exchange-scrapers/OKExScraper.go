@@ -19,7 +19,7 @@ import (
 	"github.com/zekroTJA/timedmap"
 )
 
-var _OKExSocketURL = "wss://ws.okex.com:8443/ws/v5/public"
+var _OKExSocketURL = utils.Getenv("OKEX_WS_URL", "wss://ws.okx.com:8443/ws/v5/public")
 
 //var _OKExSocketURL = url.URL{Scheme: "wss", Host: "real.okex.com:10441", Path: "/ws/v1", RawQuery: "compress=true"}
 
@@ -77,7 +77,6 @@ func NewOKExScraper(exchange dia.Exchange, scrape bool, relDB *models.RelDB) *OK
 	if err != nil {
 		log.Error("dial:", err)
 	}
-
 	s.wsClient = SwConn
 	if scrape {
 		go s.mainLoop()
@@ -130,13 +129,12 @@ type AllOKEXMarketResponse struct {
 
 // Subscribe again to all channels
 func (s *OKExScraper) subscribeToALL() {
-
 	var (
 		resp     AllOKEXMarketResponse
 		allPairs []OKEXArgs
 	)
 
-	b, _, err := utils.GetRequest("https://aws.okex.com/api/v5/public/instruments?instType=SPOT")
+	b, _, err := utils.GetRequest("https://okx.com/api/v5/public/instruments?instType=SPOT")
 	if err != nil {
 		log.Errorln("Error getting OKex market", err)
 	}
@@ -396,7 +394,7 @@ func (s *OKExScraper) FetchAvailablePairs() (pairs []dia.ExchangePair, err error
 		BaseCurrency string `json:"base_currency"`
 	}
 
-	data, _, err := utils.GetRequest("https://www.okex.com/api/spot/v3/products")
+	data, _, err := utils.GetRequest("https://www.okx.com/api/spot/v3/products")
 
 	if err != nil {
 		return

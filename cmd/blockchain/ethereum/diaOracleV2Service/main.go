@@ -22,6 +22,8 @@ import (
 	gql "github.com/machinebox/graphql"
 )
 
+var diaBaseUrl string
+
 func main() {
 	key := utils.Getenv("PRIVATE_KEY", "")
 	key_password := utils.Getenv("PRIVATE_KEY_PASSWORD", "")
@@ -54,6 +56,7 @@ func main() {
 	gqlMethodology := utils.Getenv("GQL_METHODOLOGY", "vwap")
 	assetsStr := utils.Getenv("ASSETS", "")
 	gqlAssetsStr := utils.Getenv("GQL_ASSETS", "")
+	diaBaseUrl = utils.Getenv("DIA_BASE_URL", "https://api.diadata.org")
 
 	addresses := []string{}
 	blockchains := []string{}
@@ -149,6 +152,7 @@ func main() {
 }
 
 func oracleUpdateHelper(oldPrice float64, auth *bind.TransactOpts, contract *diaOracleServiceV2.DIAOracleV2, conn *ethclient.Client, blockchain string, address string, useGql bool, gqlWindowSize int, gqlMethodology string) (float64, error) {
+	log.Printf("Executing periodic update for asset %s-%s", blockchain, address)
 	// Empty quotation for our request
 	var rawQ *models.Quotation
 	rawQ = new(models.Quotation)
@@ -298,7 +302,13 @@ func updateOracle(
 }
 
 func getAssetQuotationFromDia(blockchain, address string) (*models.Quotation, error) {
-	response, err := http.Get("https://api.diadata.org/v1/assetQuotation/" + blockchain + "/" + address)
+	// ibc special case: convert / to - in the query string
+	if strings.Split(address, "/")[0] == "ibc" {
+		address = strings.Split(address, "/")[0] + "-" + strings.Split(address, "/")[1]
+	}
+
+	// Execute the query
+	response, err := http.Get(diaBaseUrl + "/v1/assetQuotation/" + blockchain + "/" + address)
 	if err != nil {
 		return nil, err
 	}
@@ -330,7 +340,7 @@ func getGraphqlAssetQuotationFromDia(blockchain, address string, windowSize int,
 			Value  float64   `json:"Value"`
 		} `json:"GetChart"`
 	}
-	client := gql.NewClient("https://api.diadata.org/graphql/query")
+	client := gql.NewClient(diaBaseUrl + "/graphql/query")
 	req := gql.NewRequest(`
     query  {
 		 GetChart(

@@ -4,6 +4,16 @@ type Query {
 
   GetSupplies(symbol: String!): [Supply]
 
+  GetxcFeed(
+    filter: String!
+    QuoteAssets: [Asset!]
+    Exchanges: [String]
+    BlockSizeSeconds: Int!
+    BlockShiftSeconds: Int
+    StartTime: Time!
+    EndTime: Time!
+  ): [FilterPoint]
+
   GetChart(
     filter: String!
     BlockDurationSeconds: Int!
@@ -14,7 +24,6 @@ type Query {
     Exchanges: [String!]
     Address: String
     BlockChain: String
-    BaseAsset: [BaseAsset!]
   ): [FilterPoint]
 
   GetChartMeta(
@@ -27,39 +36,49 @@ type Query {
     Exchanges: [String!]
     Address: String
     BlockChain: String
-    BaseAsset: [BaseAsset!]
   ): FilterPointMeta
+
+  GetFeed(
+    Filter: String!
+    BlockSizeSeconds: Int!
+    BlockShiftSeconds: Int
+    StartTime: Time
+    EndTime: Time
+    TradeVolumeThreshold: Float
+    NativeDenomination: Boolean
+    FeedSelection: [FeedSelection!]
+  ): [FilterPointExtended]
+
+  GetFeedAggregation(
+    StartTime: Time
+    EndTime: Time
+    TradeVolumeThreshold: Float
+    FeedSelection: [FeedSelection!]
+  ): [FeedSelectionAggregated]
 
   GetVWALP(
     Quotetokenblockchain: String!
 	  Quotetokenaddress: String!
-	  BaseAssets: [BaseAsset!]
+	  BaseAssets: [Asset!]
 	  Exchanges: [String]
 	  BlockDurationSeconds: Int!
 	  EndTime: Time
 	  BasisPoints: Int!
   ): VWALP
 
-  GetNFT(Address: String!, Blockchain: String!, TokenID: String!): NFT
+}
 
-  GetNFTTrades(
-    Address: String!
-    Blockchain: String!
-    TokenID: String!
-  ): [NFTTrade]
+input FeedSelection {
+  Address: String
+  Blockchain: String
+  LiquidityThreshold: Float
+  Exchangepairs: [Exchangepair!]
+}
 
-  GetNFTOffers(
-    Address: String!
-    Blockchain: String!
-    TokenID: String!
-  ): [NFTOffer]
-
-  GetNFTBids(
-    Address: String!,
-    Blockchain: String!,
-    TokenID: String!
-  ): [NFTBid]
-
+input Exchangepair {
+  Exchange: String
+  Pairs: [String]
+  LiquidityThreshold: Float
 }
 
 scalar Time
@@ -70,7 +89,7 @@ type FilterPointMeta {
   Points: [FilterPoint]
 }
 
-input BaseAsset {
+input Asset {
   Address: String
   BlockChain: String
 }
@@ -101,74 +120,46 @@ type FilterPoint {
   Value: Float
   Name: String
   Time: Time
-  Address:String
+  Address: String
   Blockchain :String
   FirstTrade: Trade
   LastTrade: Trade
 }
 
+type FilterPointExtended {
+  Name: String
+  Symbol: String
+  Time: Time
+  Value: Float
+  Pools: [String!]
+  Pairs: [String!]
+  TradesCount: Int
+  StatusMessage: String
+  StatusCode: Int
+}
+
+type FeedSelectionAggregated {
+  Exchange: String
+  Quotetokensymbol: String
+  Quotetokenaddress: String
+  Quotetokenblockchain: String
+  Basetokensymbol: String
+  Basetokenaddress: String
+  Basetokenblockchain: String
+  Pooladdress: String
+  PoolLiquidityUSD: Float
+  Volume: Float
+  TradesCount: Int
+  LastPrice: Float
+  Time: Time
+  StatusMessage: String
+  StatusCode: Int
+}
+
 type Trade {
-  Price:Float
-  Pair:String
+  Price: Float
+  Pair: String
   Volume: Float
   Symbol: String
   EstimatedUSDPrice: Float
-}
-
-type NFT {
-  Address: String
-  Blockchain: String
-  CreationTime: Time
-  CreatorAddress: String
-  URI: String
-  TokenID: String
-}
-
-type NFTTrade {
-  Address: String
-  Blockchain: String
-  TokenID: String
-  Price: String
-  FromAddress: String
-  ToAddress: String
-  CurrencyAddress: String
-  CurrencySymbol: String
-  CurrencyDecimals: Int
-  BlockNumber: Int
-  Timestamp: Time
-  TxHash: String
-  Exchange: String
-}
-
-type NFTOffer {
-  Address: String
-  Blockchain: String
-  TokenID: String
-  StartValue: String
-  EndValue: String
-  Duration: Int
-  AuctionType: String
-  FromAddress: String
-  CurrencyAddress: String
-  CurrencySymbol: String
-  CurrencyDecimals: Int
-  Blocknumber: Int
-  Timestamp: Time
-  TxHash: String
-  Exchange: String
-}
-
-type NFTBid {
-  Address: String
-  Blockchain: String
-  TokenID: String
-  BidValue: String
-  FromAddress: String
-  CurrencyAddress: String
-  CurrencySymbol: String
-  CurrencyDecimals: Int
-  Blocknumber: Int
-  Timestamp: Time
-  TxHash: String
-  Exchange: String
 }

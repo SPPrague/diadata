@@ -8,15 +8,21 @@
         },
         {
             "Exchange": "Binance",
+            "ForeignName": "ADAFDUSD",
+            "Ignore": false,
+            "Symbol": "ADA"
+        },
+        {
+            "Exchange": "Binance",
             "ForeignName": "APEUSDT",
             "Ignore": false,
             "Symbol": "APE"
         },
         {
             "Exchange": "Binance",
-            "ForeignName": "APEBUSD",
+            "ForeignName": "APTUSDT",
             "Ignore": false,
-            "Symbol": "APE"
+            "Symbol": "APT"
         },
         {
             "Exchange": "Binance",
@@ -26,8 +32,26 @@
         },
         {
             "Exchange": "Binance",
-            "ForeignName": "AVAXBUSD",
+            "ForeignName": "ARBUSDT",
             "Ignore": false,
+            "Symbol": "ARB"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "ATOMUSDT",
+            "Ignore": false,
+            "Symbol": "ATOM"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "AVAXFDUSD",
+            "Ignore": false,
+            "Symbol": "AVAX"
+        },
+        {
+            "Exchange": "Binance",
+            "Ignore": false,
+            "ForeignName": "AVAXUSDT",
             "Symbol": "AVAX"
         },
         {
@@ -38,13 +62,31 @@
         },
         {
             "Exchange": "Binance",
-            "ForeignName": "CVXUSDT",
             "Ignore": false,
-            "Symbol": "CVX"
+            "ForeignName": "BEAMUSDT",
+            "Symbol": "BEAM"
         },
         {
             "Exchange": "Binance",
-            "ForeignName": "CVXBUSD",
+            "ForeignName": "BNBFDUSD",
+            "Ignore": false,
+            "Symbol": "BNB"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "BONKUSDT",
+            "Ignore": false,
+            "Symbol": "BONK"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "BTCFDUSD",
+            "Ignore": false,
+            "Symbol": "BTC"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "CVXUSDT",
             "Ignore": false,
             "Symbol": "CVX"
         },
@@ -56,9 +98,45 @@
         },
         {
             "Exchange": "Binance",
+            "ForeignName": "DOGEFDUSD",
+            "Ignore": false,
+            "Symbol": "DOGE"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "DOTFDUSD",
+            "Ignore": false,
+            "Symbol": "DOT"
+        },
+        {
+            "Exchange": "Binance",
             "ForeignName": "DYDXUSDT",
             "Ignore": false,
             "Symbol": "DYDX"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "EDUBTC",
+            "Ignore": false,
+            "Symbol": "EDU"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "EDUUSDT",
+            "Ignore": false,
+            "Symbol": "EDU"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "ENAUSDT",
+            "Ignore": false,
+            "Symbol": "ENA"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "ENAFDUSD",
+            "Ignore": false,
+            "Symbol": "ENA"
         },
         {
             "Exchange": "Binance",
@@ -68,9 +146,75 @@
         },
         {
             "Exchange": "Binance",
+            "ForeignName": "ETHFDUSD",
+            "Ignore": false,
+            "Symbol": "ETH"
+        },
+        {
+            "Exchange": "Binance",
+            "Ignore": false,
+            "ForeignName": "ETHUSDC",
+            "Symbol": "ETH"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "ETHFIUSDT",
+            "Ignore": false,
+            "Symbol": "ETHFI"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "EURUSDT",
+            "Ignore": false,
+            "Symbol": "EUR"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "FDUSDUSDT",
+            "Ignore": false,
+            "Symbol": "FDUSD"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "FXSUSDT",
+            "Ignore": false,
+            "Symbol": "FXS"
+        },
+        {
+            "Exchange": "Binance",
+            "Ignore": false,
+            "ForeignName": "GALAUSDT",
+            "Symbol": "GALA"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "GMXUSDT",
+            "Ignore": false,
+            "Symbol": "GMX"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "GNOUSDT",
+            "Ignore": false,
+            "Symbol": "GNO"
+        },
+        {
+            "Exchange": "Binance",
             "ForeignName": "GNSUSDT",
             "Ignore": false,
             "Symbol": "GNS"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "ICPUSDT",
+            "Ignore": false,
+            "Symbol": "ICP"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "IMXUSDT",
+            "Ignore": false,
+            "Symbol": "IMX"
         },
         {
             "Exchange": "Binance",
@@ -80,9 +224,21 @@
         },
         {
             "Exchange": "Binance",
-            "ForeignName": "JOEBUSD",
+            "ForeignName": "KAVAUSDT",
             "Ignore": false,
-            "Symbol": "JOE"
+            "Symbol": "KAVA"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "KDAUSDT",
+            "Ignore": false,
+            "Symbol": "KDA"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "KDABTC",
+            "Ignore": false,
+            "Symbol": "KDA"
         },
         {
             "Exchange": "Binance",
@@ -92,15 +248,153 @@
         },
         {
             "Exchange": "Binance",
-            "ForeignName": "KNCBUSD",
             "Ignore": false,
-            "Symbol": "KNC"
+            "ForeignName": "LDOUSDT",
+            "Symbol": "LDO"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "MATICFDUSD",
+            "Ignore": false,
+            "Symbol": "MATIC"
         },
         {
             "Exchange": "Binance",
             "ForeignName": "MATICUSDT",
             "Ignore": false,
             "Symbol": "MATIC"
+        },
+        {
+            "Exchange": "Binance",
+            "Ignore": false,
+            "ForeignName": "MKRUSDT",
+            "Symbol": "MKR"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "OPUSDT",
+            "Ignore": false,
+            "Symbol": "OP"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "ORDIUSDT",
+            "Ignore": false,
+            "Symbol": "ORDI"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "ORDIUSDC",
+            "Ignore": false,
+            "Symbol": "ORDI"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "ORDIFDUSD",
+            "Ignore": false,
+            "Symbol": "ORDI"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "ORDIBTC",
+            "Ignore": false,
+            "Symbol": "ORDI"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "PAXGBTC",
+            "Ignore": false,
+            "Symbol": "PAXG"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "PAXGUSDT",
+            "Ignore": false,
+            "Symbol": "PAXG"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "PENDLEUSDT",
+            "Ignore": false,
+            "Symbol": "PENDLE"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "PEPEUSDT",
+            "Ignore": false,
+            "Symbol": "PEPE"
+        },
+        {
+            "Exchange": "Binance",
+            "Ignore": false,
+            "ForeignName": "POLUSDT",
+            "Symbol": "POL"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "RDNTUSDT",
+            "Ignore": false,
+            "Symbol": "RDNT"
+        },
+        {
+            "Exchange": "Binance",
+            "Ignore": false,
+            "ForeignName": "RENDERUSDT",
+            "Symbol": "RENDER"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "SUSDT",
+            "Ignore": false,
+            "Symbol": "S"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "SUSDC",
+            "Ignore": false,
+            "Symbol": "S"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "SFDUSD",
+            "Ignore": false,
+            "Symbol": "S"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "SEIUSDT",
+            "Ignore": false,
+            "Symbol": "SEI"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "SHIBFDUSD",
+            "Ignore": false,
+            "Symbol": "SHIB"
+        },
+        {
+            "Exchange": "Binance",
+            "Ignore": false,
+            "ForeignName": "SNXUSDT",
+            "Symbol": "SNX"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "SOLFDUSD",
+            "Ignore": false,
+            "Symbol": "SOL"
+        },
+        {
+            "Exchange": "Binance",
+            "Ignore": false,
+            "ForeignName": "SOLUSDT",
+            "Symbol": "SOL"
+        },
+        {
+            "Exchange": "Binance",
+            "Ignore": false,
+            "ForeignName": "SOLUSDC",
+            "Symbol": "SOL"
         },
         {
             "Exchange": "Binance",
@@ -116,9 +410,45 @@
         },
         {
             "Exchange": "Binance",
-            "ForeignName": "STGBUSD",
             "Ignore": false,
-            "Symbol": "STG"
+            "ForeignName": "STORJUSDT",
+            "Symbol": "STORJ"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "STRKUSDT",
+            "Ignore": false,
+            "Symbol": "STRK"
+        },
+        {
+            "Exchange": "Binance",
+            "Ignore": false,
+            "ForeignName": "STXUSDT",
+            "Symbol": "STX"
+        },
+        {
+            "Exchange": "Binance",
+            "Ignore": false,
+            "ForeignName": "STXBTC",
+            "Symbol": "STX"
+        },
+        {
+            "Exchange": "Binance",
+            "Ignore": false,
+            "ForeignName": "STXUSDC",
+            "Symbol": "STX"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "SUIUSDT",
+            "Ignore": false,
+            "Symbol": "SUI"
+        },
+        {
+            "Exchange": "Binance",
+            "Ignore": false,
+            "ForeignName": "SUIUSDC",
+            "Symbol": "SUI"
         },
         {
             "Exchange": "Binance",
@@ -140,9 +470,129 @@
         },
         {
             "Exchange": "Binance",
+            "ForeignName": "TAOUSDT",
+            "Ignore": false,
+            "Symbol": "TAO"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "TIABTC",
+            "Ignore": false,
+            "Symbol": "TIA"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "TIAFDUSD",
+            "Ignore": false,
+            "Symbol": "TIA"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "TIAUSDT",
+            "Ignore": false,
+            "Symbol": "TIA"
+        },
+        {
+            "Exchange": "Binance",
+            "Ignore": false,
+            "ForeignName": "TIAUSDC",
+            "Symbol": "TIA"
+        },
+        {
+            "Exchange": "Binance",
+            "Ignore": false,
+            "ForeignName": "TONUSDT",
+            "Symbol": "TON"
+        },
+        {
+            "Exchange": "Binance",
             "ForeignName": "UNIUSDT",
             "Ignore": false,
             "Symbol": "UNI"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "USDCUSDT",
+            "Ignore": false,
+            "Symbol": "USDC"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "USDPUSDT",
+            "Ignore": false,
+            "Symbol": "USDP"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "WIFUSDT",
+            "Ignore": false,
+            "Symbol": "WIF"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "WLDUSDT",
+            "Ignore": false,
+            "Symbol": "WLD"
+        },
+        {
+            "Exchange": "Binance",
+            "Ignore": false,
+            "ForeignName": "WLDUSDC",
+            "Symbol": "WLD"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "XAIUSDT",
+            "Ignore": false,
+            "Symbol": "XAI"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "XRPFDUSD",
+            "Ignore": false,
+            "Symbol": "XRP"
+        },
+        {
+            "Exchange": "Binance",
+            "Ignore": false,
+            "ForeignName": "XRPUSDC",
+            "Symbol": "XRP"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "ZKFDUSD",
+            "Ignore": false,
+            "Symbol": "ZK"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "ZKUSDT",
+            "Ignore": false,
+            "Symbol": "ZK"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "ZROUSDT",
+            "Ignore": false,
+            "Symbol": "ZRO"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "ZROFDUSD",
+            "Ignore": false,
+            "Symbol": "ZRO"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "wBETHETH",
+            "Ignore": false,
+            "Symbol": "wBETH"
+        },
+        {
+            "Exchange": "Binance",
+            "ForeignName": "wBETHUSDT",
+            "Ignore": false,
+            "Symbol": "wBETH"
         }
     ]
 }

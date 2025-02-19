@@ -38,6 +38,9 @@ const (
 	restDialEth = ""
 	wsDialEth   = ""
 
+	restDialBase = ""
+	wsDialBase   = ""
+
 	restDialBSC = ""
 	wsDialBSC   = ""
 
@@ -59,6 +62,9 @@ const (
 	restDialArbitrum = ""
 	wsDialArbitrum   = ""
 
+	restDialLinea = ""
+	wsDialLinea   = ""
+
 	restDialMetis = ""
 	wsDialMetis   = ""
 
@@ -79,6 +85,9 @@ const (
 
 	restDialWanchain = ""
 	wsDialWanchain   = ""
+
+	restDialUnreal = ""
+	wsDialUnreal   = ""
 
 	uniswapWaitMilliseconds     = "25"
 	sushiswapWaitMilliseconds   = "100"
@@ -148,7 +157,7 @@ type UniswapScraper struct {
 }
 
 // NewUniswapScraper returns a new UniswapScraper for the given pair
-func NewUniswapScraper(exchange dia.Exchange, scrape bool) *UniswapScraper {
+func NewUniswapScraper(exchange dia.Exchange, scrape bool, relDB *models.RelDB) *UniswapScraper {
 	log.Info("NewUniswapScraper: ", exchange.Name)
 	var (
 		s                *UniswapScraper
@@ -171,6 +180,8 @@ func NewUniswapScraper(exchange dia.Exchange, scrape bool) *UniswapScraper {
 	switch exchange.Name {
 	case dia.UniswapExchange:
 		s = makeUniswapScraper(exchange, listenByAddress, fetchPoolsFromDB, restDialEth, wsDialEth, uniswapWaitMilliseconds)
+	case dia.UniswapExchangeBase:
+		s = makeUniswapScraper(exchange, listenByAddress, fetchPoolsFromDB, restDialBase, wsDialBase, uniswapWaitMilliseconds)
 	case dia.SushiSwapExchange:
 		s = makeUniswapScraper(exchange, listenByAddress, fetchPoolsFromDB, restDialEth, wsDialEth, sushiswapWaitMilliseconds)
 	case dia.SushiSwapExchangePolygon:
@@ -223,12 +234,18 @@ func NewUniswapScraper(exchange dia.Exchange, scrape bool) *UniswapScraper {
 		s = makeUniswapScraper(exchange, listenByAddress, fetchPoolsFromDB, restDialMoonbeam, wsDialMoonbeam, moonbeamWaitMilliseconds)
 	case dia.WanswapExchange:
 		s = makeUniswapScraper(exchange, listenByAddress, fetchPoolsFromDB, restDialWanchain, wsDialWanchain, wanchainWaitMilliseconds)
+	case dia.NileV1Exchange:
+		s = makeUniswapScraper(exchange, listenByAddress, fetchPoolsFromDB, restDialLinea, wsDialLinea, wanchainWaitMilliseconds)
+	case dia.RamsesV1Exchange:
+		s = makeUniswapScraper(exchange, listenByAddress, fetchPoolsFromDB, restDialArbitrum, wsDialArbitrum, wanchainWaitMilliseconds)
+	case dia.ThenaExchange:
+		s = makeUniswapScraper(exchange, listenByAddress, fetchPoolsFromDB, restDialBSC, wsDialBSC, sushiswapWaitMilliseconds)
+	case dia.PearlfiStableswapExchange:
+		s = makeUniswapScraper(exchange, listenByAddress, fetchPoolsFromDB, restDialUnreal, wsDialUnreal, sushiswapWaitMilliseconds)
+
 	}
 
-	s.relDB, err = models.NewPostgresDataStore()
-	if err != nil {
-		log.Fatal("new postgres datastore: ", err)
-	}
+	s.relDB = relDB
 
 	// Only include pools with (minimum) liquidity bigger than given env var.
 	liquidityThreshold, err := strconv.ParseFloat(utils.Getenv("LIQUIDITY_THRESHOLD", "0"), 64)
@@ -236,9 +253,15 @@ func NewUniswapScraper(exchange dia.Exchange, scrape bool) *UniswapScraper {
 		liquidityThreshold = float64(0)
 		log.Warnf("parse liquidity threshold:  %v. Set to default %v", err, liquidityThreshold)
 	}
+	// Only include pools with (minimum) liquidity USD value bigger than given env var.
+	liquidityThresholdUSD, err := strconv.ParseFloat(utils.Getenv("LIQUIDITY_THRESHOLD_USD", "0"), 64)
+	if err != nil {
+		liquidityThresholdUSD = float64(0)
+		log.Warnf("parse liquidity threshold:  %v. Set to default %v", err, liquidityThresholdUSD)
+	}
 
 	// Fetch all pool with given liquidity threshold from database.
-	poolMap, err = s.makeUniPoolMap(liquidityThreshold)
+	poolMap, err = s.makeUniPoolMap(liquidityThreshold, liquidityThresholdUSD)
 	if err != nil {
 		log.Fatal("build poolMap: ", err)
 	}
@@ -423,6 +446,7 @@ func (s *UniswapScraper) ListenToPair(i int, address common.Address) {
 					BaseToken:      token1,
 					QuoteToken:     token0,
 					Time:           time.Unix(swap.Timestamp, 0),
+					PoolAddress:    rawSwap.Raw.Address.Hex(),
 					ForeignTradeID: swap.ID,
 					Source:         s.exchangeName,
 					VerifiedPair:   true,
@@ -928,7 +952,7 @@ func (ps *UniswapPairScraper) Pair() dia.ExchangePair {
 
 // makeUniPoolMap returns a map with pool addresses as keys and the underlying UniswapPair as values.
 // If s.listenByAddress is true, it only loads the corresponding assets from the list.
-func (s *UniswapScraper) makeUniPoolMap(liquiThreshold float64) (map[string]UniswapPair, error) {
+func (s *UniswapScraper) makeUniPoolMap(liquiThreshold float64, liquidityThresholdUSD float64) (map[string]UniswapPair, error) {
 	pm := make(map[string]UniswapPair)
 	var (
 		pools []dia.Pool
@@ -938,7 +962,7 @@ func (s *UniswapScraper) makeUniPoolMap(liquiThreshold float64) (map[string]Unis
 	if s.listenByAddress {
 		// Only load pool info for addresses from json file.
 		poolAddresses, errAddr := getAddressesFromConfig("uniswap/subscribe_pools/" + s.exchangeName)
-		if err != nil {
+		if errAddr != nil {
 			log.Error("fetch pool addresses from config file: ", errAddr)
 		}
 		for _, address := range poolAddresses {
@@ -954,7 +978,6 @@ func (s *UniswapScraper) makeUniPoolMap(liquiThreshold float64) (map[string]Unis
 		if err != nil {
 			return pm, err
 		}
-
 	} else {
 		// Pool info will be fetched from on-chain and poolMap is not needed.
 		return pm, nil
@@ -962,11 +985,22 @@ func (s *UniswapScraper) makeUniPoolMap(liquiThreshold float64) (map[string]Unis
 
 	log.Info("Found ", len(pools), " pools.")
 	log.Info("make pool map...")
+	lowerBoundCount := 0
 	for _, pool := range pools {
 		if len(pool.Assetvolumes) != 2 {
 			log.Warn("not enough assets in pool with address: ", pool.Address)
 			continue
 		}
+
+		liquidity, lowerBound := pool.GetPoolLiquidityUSD()
+		// Discard pool if complete USD liquidity is below threshold.
+		if !lowerBound && liquidity < liquidityThresholdUSD {
+			continue
+		}
+		if lowerBound {
+			lowerBoundCount++
+		}
+
 		up := UniswapPair{
 			Address: common.HexToAddress(pool.Address),
 		}
@@ -982,5 +1016,6 @@ func (s *UniswapScraper) makeUniPoolMap(liquiThreshold float64) (map[string]Unis
 	}
 
 	log.Infof("found %v subscribable pools.", len(pm))
+	log.Infof("%v pools with lowerBound=true.", lowerBoundCount)
 	return pm, err
 }

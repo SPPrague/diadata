@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/diadata-org/diadata/pkg/dia/helpers/db"
@@ -23,10 +24,6 @@ type Datastore interface {
 	GetSupply(string, time.Time, time.Time, *RelDB) ([]dia.Supply, error)
 	SetSupply(supply *dia.Supply) error
 	GetSupplyInflux(dia.Asset, time.Time, time.Time) ([]dia.Supply, error)
-	SaveSynthSupplyInfluxToTable(*dia.SynthAssetSupply, string) error
-	SaveSynthSupplyInflux(*dia.SynthAssetSupply) error
-	GetSynthSupplyInflux(string, string, string, int, time.Time, time.Time) ([]dia.SynthAssetSupply, error)
-	GetSynthAssets(string, string) ([]string, error)
 
 	SetDiaTotalSupply(totalSupply float64) error
 	GetDiaTotalSupply() (float64, error)
@@ -50,6 +47,11 @@ type Datastore interface {
 
 	GetTradesByExchangesBatchedFull(asset dia.Asset, baseAssets []dia.Asset, exchanges []string, returnBasetoken bool, startTimes, endTimes []time.Time, maxTrades int) ([]dia.Trade, error)
 	GetTradesByExchangesBatched(asset dia.Asset, baseAssets []dia.Asset, exchanges []string, startTimes, endTimes []time.Time, maxTrades int) ([]dia.Trade, error)
+	GetxcTradesByExchangesBatched(quoteassets []dia.Asset, exchanges []string, startTimes []time.Time, endTimes []time.Time) ([]dia.Trade, error)
+
+	GetTradesByExchangepairs(exchangepairMap map[string][]dia.Pair, exchangepoolMap map[string][]string, starttime time.Time, endtime time.Time) ([]dia.Trade, error)
+	GetTradesByFeedSelection(feedselection []dia.FeedSelection, starttimes []time.Time, endtimes []time.Time, limit int) ([]dia.Trade, error)
+	GetAggregatedFeedSelection(feedselection []dia.FeedSelection, starttime time.Time, endtime time.Time, tradeVolumeThreshold float64) ([]dia.FeedSelectionAggregated, error)
 
 	GetActiveExchangesAndPairs(address string, blockchain string, numTradesThreshold int64, starttime time.Time, endtime time.Time) (map[string][]dia.Pair, map[string]int64, error)
 	GetOldTradesFromInflux(table string, exchange string, verified bool, timeInit, timeFinal time.Time) ([]dia.Trade, error)
@@ -75,16 +77,17 @@ type Datastore interface {
 	GetNumTrades(exchange string, address string, blockchain string, starttime time.Time, endtime time.Time) (int64, error)
 	GetNumTradesSeries(asset dia.Asset, exchange string, starttime time.Time, endtime time.Time, grouping string) ([]int64, error)
 	GetVolumesAllExchanges(asset dia.Asset, starttime time.Time, endtime time.Time) (exchVolumes dia.ExchangeVolumesList, err error)
-	GetExchangePairVolumes(asset dia.Asset, starttime time.Time, endtime time.Time) (map[string][]dia.PairVolume, error)
+	GetExchangePairVolumes(asset dia.Asset, starttime time.Time, endtime time.Time, threshold float64) (map[string][]dia.PairVolume, error)
+	GetExchangePairVolume(ep dia.ExchangePair, pooladdress string, starttime time.Time, endtime time.Time, threshold float64) (float64, int64, error)
 
 	// New Asset pricing methods: 23/02/2021
 	SetAssetPriceUSD(asset dia.Asset, price float64, timestamp time.Time) error
-	GetAssetPriceUSD(asset dia.Asset, timestamp time.Time) (float64, error)
+	GetAssetPriceUSD(asset dia.Asset, starttime time.Time, endtime time.Time) (float64, error)
 	GetAssetPriceUSDLatest(asset dia.Asset) (price float64, err error)
 	SetAssetQuotation(quotation *AssetQuotation) error
-	GetAssetQuotation(asset dia.Asset, timestamp time.Time) (*AssetQuotation, error)
+	GetAssetQuotation(asset dia.Asset, starttime time.Time, endtime time.Time) (*AssetQuotation, error)
 	GetAssetQuotations(asset dia.Asset, starttime time.Time, endtime time.Time) ([]AssetQuotation, error)
-	GetAssetQuotationLatest(asset dia.Asset) (*AssetQuotation, error)
+	GetAssetQuotationLatest(asset dia.Asset, starttime time.Time) (*AssetQuotation, error)
 	GetSortedAssetQuotations(assets []dia.Asset) ([]AssetQuotation, error)
 	AddAssetQuotationsToBatch(quotations []*AssetQuotation) error
 	SetAssetQuotationCache(quotation *AssetQuotation, check bool) (bool, error)
@@ -93,10 +96,12 @@ type Datastore interface {
 	GetTopAssetByMcap(symbol string, relDB *RelDB) (dia.Asset, error)
 	GetTopAssetByVolume(symbol string, relDB *RelDB) (topAsset dia.Asset, err error)
 	GetAssetsWithVOLInflux(timeInit time.Time) ([]dia.Asset, error)
+	GetOldestQuotation(asset dia.Asset) (AssetQuotation, error)
 
 	// DEX Pool  methods
 	SavePoolInflux(p dia.Pool) error
 	GetPoolInflux(poolAddress string, starttime time.Time, endtime time.Time) ([]dia.Pool, error)
+	GetPoolLiquiditiesUSD(p *dia.Pool, priceCache map[string]float64)
 
 	// Market Measures
 	GetAssetsMarketCap(asset dia.Asset) (float64, error)
@@ -132,6 +137,9 @@ type Datastore interface {
 	SetStockQuotation(sq StockQuotation) error
 	GetStockQuotation(source string, symbol string, timeInit time.Time, timeFinal time.Time) ([]StockQuotation, error)
 	GetStockSymbols() (map[Stock]string, error)
+
+	SetOracleConfigCache(dia.OracleConfig) error
+	GetOracleConfigCache(string) (dia.OracleConfig, error)
 }
 
 const (
@@ -147,6 +155,8 @@ type DB struct {
 	influxPointsInBatch int
 }
 
+var EscapeReplacer = strings.NewReplacer("\n", `\n`)
+
 const (
 	influxDbName                      = "dia"
 	influxDbTradesTable               = "trades"
@@ -158,7 +168,6 @@ const (
 	influxDBAssetQuotationsTable      = "assetQuotations"
 	influxDbBenchmarkedIndexTableName = "benchmarkedIndexValues"
 	influxDbVwapFireflyTable          = "vwapFirefly"
-	influxDbSynthSupplyTable          = "synthsupply"
 
 	influxDBDefaultURL = "http://influxdb:8086"
 )
@@ -206,10 +215,12 @@ func NewDataStoreWithoutRedis() (*DB, error) {
 }
 
 func NewDataStoreWithOptions(withRedis bool, withInflux bool) (*DB, error) {
-	var influxClient clientInfluxdb.Client
-	var influxBatchPoints clientInfluxdb.BatchPoints
-	var redisClient *redis.Client
-	var redisPipe redis.Pipeliner
+	var (
+		influxClient      clientInfluxdb.Client
+		influxBatchPoints clientInfluxdb.BatchPoints
+		redisClient       *redis.Client
+		redisPipe         redis.Pipeliner
+	)
 
 	if withRedis {
 		redisClient = db.GetRedisClient()
@@ -304,7 +315,7 @@ func (datastore *DB) CopyInfluxMeasurements(dbOrigin string, dbDestination strin
 
 func (datastore *DB) SetVWAPFirefly(foreignName string, value float64, timestamp time.Time) error {
 	tags := map[string]string{
-		"foreignName": foreignName,
+		"foreignName": EscapeReplacer.Replace(foreignName),
 	}
 	fields := map[string]interface{}{
 		"value": value,

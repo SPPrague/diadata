@@ -1,13 +1,16 @@
 package liquidityscrapers
 
 import (
+	"context"
+	"math"
 	"math/big"
 	"strconv"
 	"strings"
 	"time"
 
-	uniswapcontract "github.com/diadata-org/diadata/pkg/dia/scraper/exchange-scrapers/uniswap"
+	"github.com/diadata-org/diadata/pkg/dia/helpers/ethhelper"
 	uniswapcontractv3 "github.com/diadata-org/diadata/pkg/dia/scraper/exchange-scrapers/uniswapv3"
+	models "github.com/diadata-org/diadata/pkg/model"
 
 	"github.com/diadata-org/diadata/pkg/utils"
 
@@ -20,17 +23,20 @@ import (
 type UniswapV3Scraper struct {
 	RestClient      *ethclient.Client
 	WsClient        *ethclient.Client
+	relDB           *models.RelDB
+	datastore       *models.DB
 	poolChannel     chan dia.Pool
 	doneChannel     chan bool
 	blockchain      string
 	startBlock      uint64
 	factoryContract string
 	exchangeName    string
+	chunksBlockSize uint64
 	waitTime        int
 }
 
 // NewUniswapV3Scraper returns a new UniswapV3Scraper.
-func NewUniswapV3Scraper(exchange dia.Exchange) *UniswapV3Scraper {
+func NewUniswapV3Scraper(exchange dia.Exchange, relDB *models.RelDB, datastore *models.DB) *UniswapV3Scraper {
 	log.Info("NewUniswapScraper ", exchange.Name)
 	log.Info("NewUniswapScraper Address ", exchange.Contract)
 
@@ -38,11 +44,26 @@ func NewUniswapV3Scraper(exchange dia.Exchange) *UniswapV3Scraper {
 
 	switch exchange.Name {
 	case dia.UniswapExchangeV3:
-		uls = makeUniswapV3Scraper(exchange, "", "", "200", uint64(12369621))
+		uls = makeUniswapV3Scraper(exchange, "", "", relDB, datastore, "200", uint64(12369621))
+	case dia.UniswapExchangeV3Base:
+		uls = makeUniswapV3Scraper(exchange, "", "", relDB, datastore, "200", uint64(1371680))
+	case dia.UniswapExchangeV3Celo:
+		uls = makeUniswapV3Scraper(exchange, "", "", relDB, datastore, "200", uint64(13916355))
 	case dia.UniswapExchangeV3Polygon:
-		uls = makeUniswapV3Scraper(exchange, "", "", "200", uint64(22757913))
+		uls = makeUniswapV3Scraper(exchange, "", "", relDB, datastore, "200", uint64(22757913))
 	case dia.UniswapExchangeV3Arbitrum:
-		uls = makeUniswapV3Scraper(exchange, "", "", "200", uint64(165))
+		uls = makeUniswapV3Scraper(exchange, "", "", relDB, datastore, "200", uint64(165))
+	case dia.PanCakeSwapExchangeV3:
+		uls = makeUniswapV3Scraper(exchange, "", "", relDB, datastore, "200", uint64(26956207))
+	case dia.PearlfiExchangeTestnet:
+		uls = makeUniswapV3Scraper(exchange, "", "", relDB, datastore, "200", uint64(2890))
+	case dia.PearlfiExchange:
+		// TO DO: add init block number
+		uls = makeUniswapV3Scraper(exchange, "", "", relDB, datastore, "200", uint64(0))
+	case dia.RamsesV2Exchange:
+		uls = makeUniswapV3Scraper(exchange, "", "", relDB, datastore, "200", uint64(90593047))
+	case dia.NileV2Exchange:
+		uls = makeUniswapV3Scraper(exchange, "", "", relDB, datastore, "2000", uint64(1768866))
 	}
 
 	go func() {
@@ -52,7 +73,7 @@ func NewUniswapV3Scraper(exchange dia.Exchange) *UniswapV3Scraper {
 }
 
 // makeUniswapV3Scraper returns a uniswap scraper as used in NewUniswapV3Scraper.
-func makeUniswapV3Scraper(exchange dia.Exchange, restDial string, wsDial string, waitMilliseconds string, startBlock uint64) *UniswapV3Scraper {
+func makeUniswapV3Scraper(exchange dia.Exchange, restDial string, wsDial string, relDB *models.RelDB, datastore *models.DB, waitMilliseconds string, startBlock uint64) *UniswapV3Scraper {
 	var (
 		restClient  *ethclient.Client
 		wsClient    *ethclient.Client
@@ -83,6 +104,8 @@ func makeUniswapV3Scraper(exchange dia.Exchange, restDial string, wsDial string,
 	uls = &UniswapV3Scraper{
 		WsClient:        wsClient,
 		RestClient:      restClient,
+		relDB:           relDB,
+		datastore:       datastore,
 		poolChannel:     poolChannel,
 		doneChannel:     doneChannel,
 		blockchain:      exchange.BlockChain.Name,
@@ -91,6 +114,13 @@ func makeUniswapV3Scraper(exchange dia.Exchange, restDial string, wsDial string,
 		exchangeName:    exchange.Name,
 		waitTime:        waitTime,
 	}
+	blockSize := utils.Getenv("CHUNKS_BLOCK_SIZE", "10000")
+	uls.chunksBlockSize, err = strconv.ParseUint(blockSize, 10, 64)
+	if err != nil {
+		log.Error("Parse CHUNKS_BLOCK_SIZE: ", err)
+		uls.chunksBlockSize = uint64(10000)
+	}
+
 	return uls
 }
 
@@ -106,75 +136,94 @@ func (uls *UniswapV3Scraper) fetchPools() {
 		log.Error(err)
 	}
 
-	poolCreated, err := contract.FilterPoolCreated(
-		&bind.FilterOpts{Start: uls.startBlock},
-		[]common.Address{},
-		[]common.Address{},
-		[]*big.Int{},
-	)
+	// Iterate over chunks of blocks.
+	currentBlockNumber, err := uls.RestClient.BlockNumber(context.Background())
 	if err != nil {
-		log.Error("filter pool created: ", err)
+		log.Fatal("Get current block number: ", err)
 	}
+	var startblock, endblock uint64
+	startblock = uls.startBlock
+	endblock = uls.startBlock + uls.chunksBlockSize
 
-	for poolCreated.Next() {
-		poolsCount++
-		var pool dia.Pool
-		log.Info("pools count: ", poolsCount)
+	for endblock < currentBlockNumber+uls.chunksBlockSize {
 
-		asset0, err := uls.GetAssetFromAddress(poolCreated.Event.Token0)
+		time.Sleep(time.Duration(uls.waitTime) * time.Millisecond)
+
+		poolCreated, err := contract.FilterPoolCreated(
+			&bind.FilterOpts{
+				Start: startblock,
+				End:   &endblock,
+			},
+			[]common.Address{},
+			[]common.Address{},
+			[]*big.Int{},
+		)
 		if err != nil {
-			log.Warn("cannot fetch asset from address ", poolCreated.Event.Token0.Hex())
-		}
-		asset1, err := uls.GetAssetFromAddress(poolCreated.Event.Token1)
-		if err != nil {
-			log.Warn("cannot fetch asset from address ", poolCreated.Event.Token1.Hex())
+			log.Error("filter pool created: ", err)
+			startblock = endblock
+			endblock = startblock + uls.chunksBlockSize
+			continue
 		}
 
-		pool.Exchange = dia.Exchange{Name: uls.exchangeName}
-		pool.Blockchain = dia.BlockChain{Name: uls.blockchain}
-		pool.Address = poolCreated.Event.Pool.Hex()
-		pool.Assetvolumes = append(pool.Assetvolumes, dia.AssetVolume{Asset: asset0, Index: uint8(0)})
-		pool.Assetvolumes = append(pool.Assetvolumes, dia.AssetVolume{Asset: asset1, Index: uint8(1)})
-		pool.Time = time.Now()
+		for poolCreated.Next() {
+			poolsCount++
+			var (
+				pool   dia.Pool
+				asset0 dia.Asset
+				asset1 dia.Asset
+			)
+			log.Info("pools count: ", poolsCount)
 
-		uls.poolChannel <- pool
+			asset0, err = uls.relDB.GetAsset(poolCreated.Event.Token0.Hex(), uls.blockchain)
+			if err != nil {
+				asset0, err = ethhelper.ETHAddressToAsset(poolCreated.Event.Token0, uls.RestClient, uls.blockchain)
+				if err != nil {
+					log.Warn("cannot fetch asset from address ", poolCreated.Event.Token0.Hex())
+					continue
+				}
+			}
+			asset1, err = uls.relDB.GetAsset(poolCreated.Event.Token1.Hex(), uls.blockchain)
+			if err != nil {
+				asset1, err = ethhelper.ETHAddressToAsset(poolCreated.Event.Token1, uls.RestClient, uls.blockchain)
+				if err != nil {
+					log.Warn("cannot fetch asset from address ", poolCreated.Event.Token1.Hex())
+					continue
+				}
+			}
+
+			pool.Exchange = dia.Exchange{Name: uls.exchangeName}
+			pool.Blockchain = dia.BlockChain{Name: uls.blockchain}
+			pool.Address = poolCreated.Event.Pool.Hex()
+
+			balance0Big, err := ethhelper.GetBalanceOf(common.HexToAddress(asset0.Address), common.HexToAddress(pool.Address), uls.RestClient)
+			if err != nil {
+				log.Error("GetBalanceOf: ", err)
+			}
+			balance1Big, err := ethhelper.GetBalanceOf(common.HexToAddress(asset1.Address), common.HexToAddress(pool.Address), uls.RestClient)
+			if err != nil {
+				log.Error("GetBalanceOf: ", err)
+			}
+			balance0, _ := new(big.Float).Quo(big.NewFloat(0).SetInt(balance0Big), new(big.Float).SetFloat64(math.Pow10(int(asset0.Decimals)))).Float64()
+			balance1, _ := new(big.Float).Quo(big.NewFloat(0).SetInt(balance1Big), new(big.Float).SetFloat64(math.Pow10(int(asset1.Decimals)))).Float64()
+
+			pool.Assetvolumes = append(pool.Assetvolumes, dia.AssetVolume{Asset: asset0, Volume: balance0, Index: uint8(0)})
+			pool.Assetvolumes = append(pool.Assetvolumes, dia.AssetVolume{Asset: asset1, Volume: balance1, Index: uint8(1)})
+
+			// Determine USD liquidity
+			if balance0 > GLOBAL_NATIVE_LIQUIDITY_THRESHOLD && balance1 > GLOBAL_NATIVE_LIQUIDITY_THRESHOLD {
+				uls.datastore.GetPoolLiquiditiesUSD(&pool, priceCache)
+			}
+
+			pool.Time = time.Now()
+
+			uls.poolChannel <- pool
+
+		}
+		startblock = endblock
+		endblock = startblock + uls.chunksBlockSize
 
 	}
 	uls.doneChannel <- true
-}
-
-func (uls *UniswapV3Scraper) GetAssetFromAddress(address common.Address) (asset dia.Asset, err error) {
-	connection := uls.RestClient
-
-	var tokenContract *uniswapcontract.IERC20Caller
-
-	tokenContract, err = uniswapcontract.NewIERC20Caller(address, connection)
-	if err != nil {
-		log.Error(err)
-	}
-
-	symbol, err := tokenContract.Symbol(&bind.CallOpts{})
-	if err != nil {
-		log.Error(err)
-	}
-	name, err := tokenContract.Name(&bind.CallOpts{})
-	if err != nil {
-		log.Error(err)
-	}
-	decimals, err := tokenContract.Decimals(&bind.CallOpts{})
-	if err != nil {
-		log.Error(err)
-	}
-
-	asset = dia.Asset{
-		Symbol:     symbol,
-		Name:       name,
-		Address:    address.Hex(),
-		Blockchain: uls.blockchain,
-		Decimals:   decimals,
-	}
-
-	return
 }
 
 func (uas *UniswapV3Scraper) Pool() chan dia.Pool {

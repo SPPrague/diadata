@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/diadata-org/diadata/pkg/dia/scraper/exchange-scrapers/uniswap"
+	models "github.com/diadata-org/diadata/pkg/model"
 
 	"github.com/diadata-org/diadata/pkg/dia"
 	"github.com/diadata-org/diadata/pkg/utils"
@@ -23,23 +24,28 @@ type UniswapPair struct {
 }
 
 const (
-	restDial          = "http://159.69.120.42:8545/"
-	restDialBSC       = ""
-	restDialPolygon   = ""
-	restDialCelo      = ""
-	restDialFantom    = ""
-	restDialMoonriver = ""
-	restDialAurora    = ""
-	restDialArbitrum  = ""
-	restDialMetis     = ""
-	restDialAvalanche = ""
-	restDialTelos     = ""
-	restDialEvmos     = ""
-	restDialAstar     = ""
-	restDialMoonbeam  = ""
-	restDialWanchain  = ""
+	restDial              = ""
+	restDialBase          = ""
+	restDialBSC           = ""
+	restDialPolygon       = ""
+	restDialCelo          = ""
+	restDialFantom        = ""
+	restDialMoonriver     = ""
+	restDialAurora        = ""
+	restDialArbitrum      = ""
+	restDialMetis         = ""
+	restDialAvalanche     = ""
+	restDialTelos         = ""
+	restDialEvmos         = "https://evmos-evm.publicnode.com"
+	restDialAstar         = ""
+	restDialMoonbeam      = ""
+	restDialWanchain      = ""
+	restDialUnrealTestnet = ""
+	restDialUnreal        = ""
+	restDialLinea         = ""
 
 	uniswapWaitMilliseconds     = "25"
+	baseWaitMilliseconds        = "200"
 	sushiswapWaitMilliseconds   = "100"
 	pancakeswapWaitMilliseconds = "100"
 	dfynWaitMilliseconds        = "100"
@@ -60,65 +66,84 @@ const (
 
 type UniswapAssetSource struct {
 	RestClient   *ethclient.Client
+	relDB        *models.RelDB
 	assetChannel chan dia.Asset
 	doneChannel  chan bool
-	blockchain   string
+	exchange     dia.Exchange
 	waitTime     int
 }
 
 var exchangeFactoryContractAddress string
 
-func NewUniswapAssetSource(exchange dia.Exchange) (uas *UniswapAssetSource) {
+func NewUniswapAssetSource(exchange dia.Exchange, relDB *models.RelDB) (uas *UniswapAssetSource) {
 
 	switch exchange.Name {
 	case dia.UniswapExchange:
-		uas = makeUniswapAssetSource(exchange, restDial, uniswapWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDial, relDB, uniswapWaitMilliseconds)
 	case dia.SushiSwapExchange:
-		uas = makeUniswapAssetSource(exchange, restDial, sushiswapWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDial, relDB, sushiswapWaitMilliseconds)
 	case dia.SushiSwapExchangeArbitrum:
-		uas = makeUniswapAssetSource(exchange, restDialArbitrum, sushiswapWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialArbitrum, relDB, sushiswapWaitMilliseconds)
 	case dia.SushiSwapExchangeFantom:
-		uas = makeUniswapAssetSource(exchange, restDialFantom, sushiswapWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialFantom, relDB, sushiswapWaitMilliseconds)
+	case dia.SushiSwapExchangePolygon:
+		uas = makeUniswapAssetSource(exchange, restDialPolygon, relDB, sushiswapWaitMilliseconds)
+	case dia.ApeswapExchange:
+		uas = makeUniswapAssetSource(exchange, restDialBSC, relDB, sushiswapWaitMilliseconds)
 	case dia.CamelotExchange:
-		uas = makeUniswapAssetSource(exchange, restDialArbitrum, sushiswapWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialArbitrum, relDB, sushiswapWaitMilliseconds)
 	case dia.PanCakeSwap:
-		uas = makeUniswapAssetSource(exchange, restDialBSC, pancakeswapWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialBSC, relDB, pancakeswapWaitMilliseconds)
 	case dia.DfynNetwork:
-		uas = makeUniswapAssetSource(exchange, restDialPolygon, dfynWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialPolygon, relDB, dfynWaitMilliseconds)
 	case dia.QuickswapExchange:
-		uas = makeUniswapAssetSource(exchange, restDialPolygon, dfynWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialPolygon, relDB, dfynWaitMilliseconds)
 	case dia.UbeswapExchange:
-		uas = makeUniswapAssetSource(exchange, restDialCelo, ubeswapWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialCelo, relDB, ubeswapWaitMilliseconds)
 	case dia.SpookyswapExchange:
-		uas = makeUniswapAssetSource(exchange, restDialFantom, spookyswapWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialFantom, relDB, spookyswapWaitMilliseconds)
 	case dia.SpiritswapExchange:
-		uas = makeUniswapAssetSource(exchange, restDialFantom, spiritswapWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialFantom, relDB, spiritswapWaitMilliseconds)
 	case dia.SolarbeamExchange:
-		uas = makeUniswapAssetSource(exchange, restDialMoonriver, solarbeamWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialMoonriver, relDB, solarbeamWaitMilliseconds)
 	case dia.TrisolarisExchange:
-		uas = makeUniswapAssetSource(exchange, restDialAurora, trisolarisWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialAurora, relDB, trisolarisWaitMilliseconds)
 	case dia.NetswapExchange:
-		uas = makeUniswapAssetSource(exchange, restDialMetis, metisWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialMetis, relDB, metisWaitMilliseconds)
 	case dia.HuckleberryExchange:
-		uas = makeUniswapAssetSource(exchange, restDialMoonriver, moonriverWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialMoonriver, relDB, moonriverWaitMilliseconds)
 	case dia.TraderJoeExchange:
-		uas = makeUniswapAssetSource(exchange, restDialAvalanche, avalancheWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialAvalanche, relDB, avalancheWaitMilliseconds)
 	case dia.PangolinExchange:
-		uas = makeUniswapAssetSource(exchange, restDialAvalanche, avalancheWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialAvalanche, relDB, avalancheWaitMilliseconds)
 	case dia.TethysExchange:
-		uas = makeUniswapAssetSource(exchange, restDialMetis, metisWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialMetis, relDB, metisWaitMilliseconds)
 	case dia.HermesExchange:
-		uas = makeUniswapAssetSource(exchange, restDialMetis, metisWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialMetis, relDB, metisWaitMilliseconds)
 	case dia.OmniDexExchange:
-		uas = makeUniswapAssetSource(exchange, restDialTelos, telosWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialTelos, relDB, telosWaitMilliseconds)
 	case dia.DiffusionExchange:
-		uas = makeUniswapAssetSource(exchange, restDialEvmos, evmosWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialEvmos, relDB, evmosWaitMilliseconds)
 	case dia.ArthswapExchange:
-		uas = makeUniswapAssetSource(exchange, restDialAstar, astarWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialAstar, relDB, astarWaitMilliseconds)
 	case dia.StellaswapExchange:
-		uas = makeUniswapAssetSource(exchange, restDialMoonbeam, moonbeamWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialMoonbeam, relDB, moonbeamWaitMilliseconds)
 	case dia.WanswapExchange:
-		uas = makeUniswapAssetSource(exchange, restDialWanchain, wanchainWaitMilliseconds)
+		uas = makeUniswapAssetSource(exchange, restDialWanchain, relDB, wanchainWaitMilliseconds)
+	case dia.PearlfiExchangeTestnet:
+		uas = makeUniswapAssetSource(exchange, restDialUnrealTestnet, relDB, wanchainWaitMilliseconds)
+	case dia.PearlfiExchange:
+		uas = makeUniswapAssetSource(exchange, restDialUnreal, relDB, wanchainWaitMilliseconds)
+	case dia.PearlfiStableswapExchange:
+		uas = makeUniswapAssetSource(exchange, restDialUnreal, relDB, wanchainWaitMilliseconds)
+	case dia.RamsesV1Exchange:
+		uas = makeUniswapAssetSource(exchange, restDialArbitrum, relDB, wanchainWaitMilliseconds)
+	case dia.NileV1Exchange:
+		uas = makeUniswapAssetSource(exchange, restDialLinea, relDB, wanchainWaitMilliseconds)
+	case dia.ThenaExchange:
+		uas = makeUniswapAssetSource(exchange, restDialBSC, relDB, sushiswapWaitMilliseconds)
+	case dia.UniswapExchangeBase:
+		uas = makeUniswapAssetSource(exchange, restDialBase, relDB, baseWaitMilliseconds)
 	}
 
 	exchangeFactoryContractAddress = exchange.Contract
@@ -131,7 +156,7 @@ func NewUniswapAssetSource(exchange dia.Exchange) (uas *UniswapAssetSource) {
 }
 
 // makeUniswapAssetSource returns an asset source as used in NewUniswapAssetSource.
-func makeUniswapAssetSource(exchange dia.Exchange, restDial string, waitMilliseconds string) *UniswapAssetSource {
+func makeUniswapAssetSource(exchange dia.Exchange, restDial string, relDB *models.RelDB, waitMilliseconds string) *UniswapAssetSource {
 	var (
 		restClient   *ethclient.Client
 		err          error
@@ -154,9 +179,10 @@ func makeUniswapAssetSource(exchange dia.Exchange, restDial string, waitMillisec
 	}
 	uas = &UniswapAssetSource{
 		RestClient:   restClient,
+		relDB:        relDB,
 		assetChannel: assetChannel,
 		doneChannel:  doneChannel,
-		blockchain:   exchange.BlockChain.Name,
+		exchange:     exchange,
 		waitTime:     waitTime,
 	}
 	return uas
@@ -176,7 +202,6 @@ func (uas *UniswapAssetSource) getNumPairs() (int, error) {
 	if err != nil {
 		log.Error(err)
 	}
-
 	numPairs, err := contract.AllPairsLength(&bind.CallOpts{})
 	return int(numPairs.Int64()), err
 }
@@ -189,16 +214,24 @@ func (uas *UniswapAssetSource) fetchAssets() {
 	}
 	log.Info("Found ", numPairs, " pairs")
 	checkMap := make(map[string]struct{})
-	for i := 0; i < numPairs; i++ {
+
+	_, index, err := uas.relDB.GetScraperIndex(uas.exchange.Name, dia.SCRAPER_TYPE_ASSETCOLLECTOR)
+	if err != nil {
+		log.Error("GetScraperIndex: ", err)
+	}
+	log.Info("Start at index ", index)
+
+	for index < int64(numPairs) {
+		log.Info("index: ", index)
 		time.Sleep(time.Duration(uas.waitTime) * time.Millisecond)
-		pair, err := uas.GetPairByID(int64(numPairs - 1 - i))
+		pair, err := uas.GetPairByID(index)
 		if err != nil {
-			log.Errorln("Error getting pair with ID ", numPairs-1-i)
+			log.Errorln("Error getting pair with ID ", index)
 		}
 		asset0 := pair.Token0
 		asset1 := pair.Token1
-		asset0.Blockchain = uas.blockchain
-		asset1.Blockchain = uas.blockchain
+		asset0.Blockchain = uas.exchange.BlockChain.Name
+		asset1.Blockchain = uas.exchange.BlockChain.Name
 		// Don't repeat sending already sent assets
 		if _, ok := checkMap[asset0.Address]; !ok {
 			if asset0.Symbol != "" {
@@ -212,6 +245,11 @@ func (uas *UniswapAssetSource) fetchAssets() {
 				uas.assetChannel <- asset1
 			}
 		}
+		index++
+	}
+	err = uas.relDB.SetScraperIndex(uas.exchange.Name, dia.SCRAPER_TYPE_ASSETCOLLECTOR, dia.INDEX_TYPE_INDEX, index)
+	if err != nil {
+		log.Error("SetScraperIndex: ", err)
 	}
 	uas.doneChannel <- true
 }

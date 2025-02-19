@@ -15,7 +15,7 @@ const { getValues: getValueAstar } = require("./nastrhelper");
 const {
   tokenkey,
   redis,
-  allowedtokens,
+  allowedTokens,
   getPrice,
   pricekey,
 } = require("./utils");
@@ -23,17 +23,25 @@ const {
 let cache = redis();
 
 async function cronstart() {
-  for (const value of allowedtokens) {
+  for (const value of allowedTokens) {
     switch (value.source) {
       case "interlay":
         {
           let saved
           try{
-            saved = await getInterlayValues(value.vtoken);
+             saved = await getInterlayValues(value.vtoken);
+              if (saved){
+              cache.set("interlayraw"+ value.vtoken,JSON.stringify(saved))
+             }else{
+              continue
+             }
           }catch(e){
-            saved = 0
+             saved = 0
+            return
           }
           let btcprice = await getPrice("BTC");
+ 
+ 
           cache.set(
             tokenkey("interlay", value.vtoken),
             JSON.stringify({
@@ -43,6 +51,7 @@ async function cronstart() {
                 // decimal: saved.decimal,
                 ratio: saved.total_backable / saved.total_issued,
               },
+              timestamp: Date.now(),
               fair_price:
                 (saved.total_backable/1e8) / (saved.total_issued/1e8) > 1
                   ? btcprice
@@ -53,22 +62,39 @@ async function cronstart() {
         break;
       case "bifrost":
         {
-          let saved = await getBiFrostValues("KSM");
-          let btcprice = await getPrice("KSM");
+          let saved;
+          try{
+             saved = await getBiFrostValues(value.token);
+         }catch(e){
+          return
+         }
+          let btcprice = await getPrice(value.token);
+
+ 
+          let ratio = saved.total_backable/saved.total_issued;
+
+          let fairprice =  ratio  *btcprice
+
+          let decimal = Math.pow(10, saved.decimal);
+ 
+           if(value.token=="DOT"){
+            decimal = 1e10
+          }
+
+
+         
 
           cache.set(
             tokenkey("bifrost", value.vtoken),
             JSON.stringify({
               collateral_ratio: {
-                issued_token: saved.total_issued / 1e12,
-                locked_token: saved.total_backable / 1e12,
+                issued_token: saved.total_issued / decimal,
+                locked_token: saved.total_backable / decimal,
                 ratio: saved.total_backable / saved.total_issued,
                 // decimal: saved.decimal,
               },
-              fair_price:
-              saved.total_backable / saved.total_issued > 1
-                ? btcprice
-                : (btcprice * saved.total_backable) / saved.total_issued,
+              fair_price:fairprice,
+              timestamp: Date.now()
             })
           );
         }
@@ -121,11 +147,7 @@ async function cronstart() {
     await cache.set(pricekey(value.token), baseAssetPrice);
   }
 
-  for (const value of allowedtokens) {
-    let val = await cache.get(tokenkey(value.source, value.vtoken));
-    console.log("------", val);
-    console.log("----value--", value);
-  }
+   
 }
 
 module.exports = {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/diadata-org/diadata/pkg/dia/scraper/exchange-scrapers/curvefi"
 	"github.com/diadata-org/diadata/pkg/dia/scraper/exchange-scrapers/curvefi/token"
+	"github.com/diadata-org/diadata/pkg/dia/scraper/exchange-scrapers/curvefifactory"
 	"github.com/diadata-org/diadata/pkg/dia/scraper/exchange-scrapers/curvefimeta"
 	"github.com/diadata-org/diadata/pkg/utils"
 
@@ -53,10 +54,11 @@ func NewCurvefiAssetSource(exchange dia.Exchange) *CurvefiAssetSource {
 		basePools := curveRegistry{Type: 1, Address: common.HexToAddress(exchange.Contract)}
 		cryptoswapPools := curveRegistry{Type: 1, Address: common.HexToAddress("0x8F942C20D02bEfc377D41445793068908E2250D0")}
 		metaPools := curveRegistry{Type: 2, Address: common.HexToAddress("0xB9fC157394Af804a3578134A6585C0dc9cc990d4")}
-		// cryptoPools := curveRegistry{Type:2, Address: common.HexToAddress("0xF18056Bbd320E96A48e3Fbf8bC061322531aac99")}
-		registries := []curveRegistry{basePools, cryptoswapPools, metaPools}
+		stableSwapRegistry := curveRegistry{Type: 3, Address: common.HexToAddress("0x6A8cbed756804B16E05E741eDaBd5cB544AE21bf")}
+		factoryPools := curveRegistry{Type: 3, Address: common.HexToAddress("0xF18056Bbd320E96A48e3Fbf8bC061322531aac99")}
+		factory2Pools := curveRegistry{Type: 3, Address: common.HexToAddress("0x4F8846Ae9380B90d2E71D5e3D042dff3E7ebb40d")}
+		registries := []curveRegistry{factoryPools, factory2Pools, basePools, cryptoswapPools, metaPools, stableSwapRegistry}
 		cas = makeCurvefiAssetSource(exchange, registries, curveRestDialEth, uniswapWaitMilliseconds)
-
 	case dia.CurveFIExchangeFantom:
 		exchange.Contract = ""
 		// basePools := curveRegistry{Type: 1, Address: common.HexToAddress(exchange.Contract)}
@@ -176,7 +178,7 @@ func (cas *CurvefiAssetSource) loadPoolsAndCoins(registry curveRegistry) (err er
 		}
 	}
 
-	if registry.Type == 2 {
+	if registry.Type == 2 || registry.Type == 3 {
 		log.Info("load meta type pools...")
 		var contract *curvefimeta.CurvefimetaCaller
 		var poolCount *big.Int
@@ -241,8 +243,31 @@ func (cas *CurvefiAssetSource) loadPoolData(pool string, registry curveRegistry)
 			log.Error("loadPoolData - GetCoins: ", err)
 		}
 		// GetCoins on meta pools returns [4]common.Address instead of [8]common.Address for standard pools.
+		//nolint
 		for i, item := range aux {
 			poolCoins[i] = item
+		}
+
+	}
+	if registry.Type == 3 {
+		log.Info("pool type 3...")
+		contract, err := curvefifactory.NewCurvefifactoryCaller(common.HexToAddress(pool), cas.RestClient)
+		if err != nil {
+			log.Error("loadPoolData - NewCurvefiCaller: ", err)
+		}
+
+		var i int64
+		poolAssetAddress, err := contract.Coins(&bind.CallOpts{}, big.NewInt(i))
+		if err != nil {
+			log.Error("loadPoolData - GetCoins: ", err)
+		}
+		for poolAssetAddress != (common.Address{}) && i < 8 {
+			poolCoins[i] = poolAssetAddress
+			i++
+			poolAssetAddress, err = contract.Coins(&bind.CallOpts{}, big.NewInt(i))
+			if err != nil {
+				log.Warn("loadPoolData - GetCoins: ", err)
+			}
 		}
 
 	}

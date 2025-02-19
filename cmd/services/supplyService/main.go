@@ -55,14 +55,14 @@ func main() {
 		log.Info("set total supply: DIA")
 	}
 	// Set circulating supply
-	err = ds.SetDiaCirculatingSupply(float64(94287049))
+	err = ds.SetDiaCirculatingSupply(float64(119676104))
 	if err != nil {
 		log.Errorf("error setting circulating supply for %s: %v\n", "DIA", err)
 	} else {
 		log.Info("set circulating supply: DIA")
 	}
 
-	xrp, err := relDB.GetAsset("0x0000000000000000000000000000000000000000", "Ripple")
+	xrp, err := relDB.GetAsset("0x0000000000000000000000000000000000000000", "XRPL")
 	if err != nil {
 		log.Error("get xrp: ", err)
 	}

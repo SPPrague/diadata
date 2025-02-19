@@ -18,6 +18,9 @@ func UniqueStrings(s []string) []string {
 
 // Contains takes a slice of strings and a string and checks if it is contained in the slice.
 func Contains(s *[]string, str string) bool {
+	if s == nil {
+		return false
+	}
 	for _, a := range *s {
 		if a == str {
 			return true
@@ -69,4 +72,15 @@ func MinString(sl []string) (string, int64) {
 		}
 	}
 	return min, index
+}
+
+func CheckDuplicates(arr []string) bool {
+	encountered := map[string]bool{}
+	for i := 0; i < len(arr); i++ {
+		if encountered[arr[i]] {
+			return true
+		}
+		encountered[arr[i]] = true
+	}
+	return false
 }

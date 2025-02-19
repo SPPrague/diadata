@@ -13,28 +13,30 @@ import (
 // Outliers are eliminated using interquartile range.
 // see: https://en.wikipedia.org/wiki/Interquartile_range
 type FilterMAIR struct {
-	asset       dia.Asset
-	exchange    string
-	currentTime time.Time
-	prices      []float64
-	volumes     []float64
-	lastTrade   dia.Trade
-	memory      int
-	value       float64
-	filterName  string
-	modified    bool
+	asset              dia.Asset
+	exchange           string
+	currentTime        time.Time
+	prices             []float64
+	volumes            []float64
+	lastTrade          dia.Trade
+	memory             int
+	value              float64
+	filterName         string
+	nativeDenomination bool
+	modified           bool
 }
 
 // NewFilterMAIR returns a FilterMAIR
-func NewFilterMAIR(asset dia.Asset, exchange string, currentTime time.Time, memory int) *FilterMAIR {
+func NewFilterMAIR(asset dia.Asset, exchange string, currentTime time.Time, memory int, nativeDenomination bool) *FilterMAIR {
 	filter := &FilterMAIR{
-		asset:       asset,
-		exchange:    exchange,
-		prices:      []float64{},
-		volumes:     []float64{},
-		currentTime: currentTime,
-		memory:      memory,
-		filterName:  "MAIR" + strconv.Itoa(memory),
+		asset:              asset,
+		exchange:           exchange,
+		prices:             []float64{},
+		volumes:            []float64{},
+		currentTime:        currentTime,
+		memory:             memory,
+		filterName:         "MAIR" + strconv.Itoa(memory),
+		nativeDenomination: nativeDenomination,
 	}
 	return filter
 }
@@ -60,8 +62,8 @@ func (filter *FilterMAIR) fill(trade dia.Trade) {
 	// filter.currentTime is the timestamp of the last filled trade.
 	// It is initialized with begin time of tradesblock upon creation of the filter.
 	diff := int(trade.Time.Sub(filter.currentTime).Seconds())
-	if diff > 1 {
-		for diff > 1 {
+	if diff >= 1 {
+		for diff >= 1 {
 			filter.processDataPoint(trade)
 			diff--
 		}
@@ -69,13 +71,13 @@ func (filter *FilterMAIR) fill(trade dia.Trade) {
 		if diff == 0.0 {
 			if len(filter.prices) >= 1 {
 				/// Remove latest data point and update with newer
-				filter.prices = filter.prices[1:]
-				filter.volumes = filter.volumes[1:]
+				filter.prices = filter.prices[:len(filter.prices)-1]
+				filter.volumes = filter.volumes[:len(filter.volumes)-1]
 			}
 		}
 		filter.processDataPoint(trade)
 	}
-	filter.currentTime = trade.Time
+	filter.currentTime = time.Unix(int64(trade.Time.Unix()), 0)
 }
 
 func (filter *FilterMAIR) processDataPoint(trade dia.Trade) {
@@ -84,8 +86,13 @@ func (filter *FilterMAIR) processDataPoint(trade dia.Trade) {
 		filter.prices = filter.prices[0 : filter.memory-1]
 		filter.volumes = filter.volumes[0 : filter.memory-1]
 	}
-	filter.prices = append([]float64{trade.EstimatedUSDPrice}, filter.prices...)
-	filter.volumes = append([]float64{trade.Volume}, filter.volumes...)
+	if !filter.nativeDenomination {
+		filter.prices = append(filter.prices, trade.EstimatedUSDPrice)
+	} else {
+		filter.prices = append(filter.prices, trade.Price)
+	}
+
+	filter.volumes = append(filter.volumes, trade.Volume)
 }
 
 func (filter *FilterMAIR) FinalCompute(t time.Time) float64 {
@@ -113,7 +120,11 @@ func (filter *FilterMAIR) finalCompute(t time.Time) float64 {
 	filter.value = mean
 	// Reduce the filter values to the last recorded value for the next tradesblock.
 	if len(filter.prices) > 0 && len(filter.volumes) > 0 {
-		filter.prices = []float64{filter.lastTrade.EstimatedUSDPrice}
+		if !filter.nativeDenomination {
+			filter.prices = []float64{filter.lastTrade.EstimatedUSDPrice}
+		} else {
+			filter.prices = []float64{filter.lastTrade.Price}
+		}
 		filter.volumes = []float64{filter.lastTrade.Volume}
 	}
 	return filter.value

@@ -90,7 +90,7 @@ func (rdb *RelDB) SetPool(pool dia.Pool) error {
 	}
 
 	query0 := fmt.Sprintf(
-		`INSERT INTO %s (exchange,blockchain,address) VALUES ($1,$2,$3)`,
+		`INSERT INTO %s (exchange,blockchain,address) VALUES ($1,$2,$3) ON CONFLICT (blockchain,address) DO NOTHING`,
 		poolTable,
 	)
 	_, err := rdb.postgresClient.Exec(
@@ -112,15 +112,21 @@ func (rdb *RelDB) SetPool(pool dia.Pool) error {
 	var query1 string
 	for i := 0; i < len(pool.Assetvolumes); i++ {
 		query1 = fmt.Sprintf(
-			`INSERT INTO %s (pool_id,asset_id,liquidity,time_stamp,token_index)
-				VALUES ((SELECT pool_id from %s where address=$1 and blockchain=$2),(SELECT asset_id from %s where address=$3 and blockchain=$4),$5,$6,$7)
-				ON CONFLICT (pool_id,asset_id) 
-				DO UPDATE SET liquidity=EXCLUDED.liquidity, time_stamp=EXCLUDED.time_stamp, token_index=EXCLUDED.token_index`,
+			`INSERT INTO %s (pool_id,asset_id,liquidity,liquidity_usd,time_stamp,token_index)
+				VALUES (
+					(SELECT pool_id from %s where address=$1 and blockchain=$2),
+				    (SELECT asset_id from %s where address=$3 and blockchain=$4),$5,$6,$7,$8
+				)
+				ON CONFLICT (pool_id,asset_id)
+				DO UPDATE
+				    SET liquidity=EXCLUDED.liquidity,
+				    	liquidity_usd=EXCLUDED.liquidity_usd,
+				    	time_stamp=EXCLUDED.time_stamp,
+				    	token_index=EXCLUDED.token_index`,
 			poolassetTable,
 			poolTable,
 			assetTable,
 		)
-
 		_, err := rdb.postgresClient.Exec(
 			context.Background(),
 			query1,
@@ -129,6 +135,7 @@ func (rdb *RelDB) SetPool(pool dia.Pool) error {
 			pool.Assetvolumes[i].Asset.Address,
 			pool.Assetvolumes[i].Asset.Blockchain,
 			pool.Assetvolumes[i].Volume,
+			pool.Assetvolumes[i].VolumeUSD,
 			pool.Time,
 			pool.Assetvolumes[i].Index,
 		)
@@ -136,9 +143,32 @@ func (rdb *RelDB) SetPool(pool dia.Pool) error {
 			return err
 		}
 	}
-
 	return nil
+}
 
+// GetAllDEXPoolsCount returns a map which maps a DEX onto the number of pools on the DEX.
+func (rdb *RelDB) GetAllDEXPoolsCount() (map[string]int, error) {
+	poolsCount := make(map[string]int)
+
+	query := fmt.Sprintf("SELECT exchange,COUNT(address) FROM %s GROUP BY exchange", poolTable)
+	rows, err := rdb.postgresClient.Query(context.Background(), query)
+	if err != nil {
+		return poolsCount, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var exchange string
+		var numPools int
+		err = rows.Scan(
+			&exchange,
+			&numPools,
+		)
+		if err != nil {
+			return poolsCount, err
+		}
+		poolsCount[exchange] = numPools
+	}
+	return poolsCount, nil
 }
 
 // GetPoolByAddress returns the most recent pool data, i.e. liquidity.
@@ -146,22 +176,22 @@ func (rdb *RelDB) GetPoolByAddress(blockchain string, address string) (pool dia.
 
 	var rows pgx.Rows
 	query := fmt.Sprintf(`
-		SELECT pa.liquidity,a.symbol,a.name,a.address,a.decimals,p.exchange,pa.time_stamp,pa.token_index 
-		FROM %s pa 
-		INNER JOIN %s p 
-		ON p.pool_id=pa.pool_id 
+		SELECT pa.liquidity,pa.liquidity_usd,a.symbol,a.name,a.address,a.decimals,p.exchange,pa.time_stamp,pa.token_index
+		FROM %s pa
+		INNER JOIN %s p
+		ON p.pool_id=pa.pool_id
 		INNER JOIN %s a
-		ON pa.asset_id=a.asset_id 
-		WHERE p.blockchain='%s'
-		AND p.address='%s'`,
+		ON pa.asset_id=a.asset_id
+		WHERE p.blockchain=$1
+		AND p.address=$2
+		ORDER BY pa.token_index ASC
+		`,
 		poolassetTable,
 		poolTable,
 		assetTable,
-		blockchain,
-		address,
 	)
 
-	rows, err = rdb.postgresClient.Query(context.Background(), query)
+	rows, err = rdb.postgresClient.Query(context.Background(), query, blockchain, address)
 	if err != nil {
 		return
 	}
@@ -169,13 +199,16 @@ func (rdb *RelDB) GetPoolByAddress(blockchain string, address string) (pool dia.
 
 	for rows.Next() {
 		var (
-			decimals    sql.NullInt64
-			index       sql.NullInt64
-			assetvolume dia.AssetVolume
-			timestamp   sql.NullTime
+			decimals     sql.NullInt64
+			index        sql.NullInt64
+			timestamp    sql.NullTime
+			liquidity    sql.NullFloat64
+			liquidityUSD sql.NullFloat64
+			assetvolume  dia.AssetVolume
 		)
 		err = rows.Scan(
-			&assetvolume.Volume,
+			&liquidity,
+			&liquidityUSD,
 			&assetvolume.Asset.Symbol,
 			&assetvolume.Asset.Name,
 			&assetvolume.Asset.Address,
@@ -196,6 +229,12 @@ func (rdb *RelDB) GetPoolByAddress(blockchain string, address string) (pool dia.
 		if timestamp.Valid {
 			pool.Time = timestamp.Time
 		}
+		if liquidity.Valid {
+			assetvolume.Volume = liquidity.Float64
+		}
+		if liquidityUSD.Valid {
+			assetvolume.VolumeUSD = liquidityUSD.Float64
+		}
 		assetvolume.Asset.Blockchain = blockchain
 		pool.Assetvolumes = append(pool.Assetvolumes, assetvolume)
 	}
@@ -213,19 +252,19 @@ func (rdb *RelDB) GetAllPoolAddrsExchange(exchange string, liquiThreshold float6
 		query string
 	)
 	if liquiThreshold == float64(0) {
-		query = fmt.Sprintf("SELECT address FROM %s WHERE exchange='%s'", poolTable, exchange)
+		query = fmt.Sprintf("SELECT address FROM %s WHERE exchange=$1", poolTable)
+		rows, err = rdb.postgresClient.Query(context.Background(), query, exchange)
 	} else {
 		query = fmt.Sprintf(`
-		SELECT DISTINCT p.address 
-		FROM %s p 
-		INNER JOIN %s pa 
-		ON p.pool_id=pa.pool_id 
-		WHERE p.exchange='%s' 
-		AND pa.liquidity>=%v
-		`, poolTable, poolassetTable, exchange, liquiThreshold)
+		SELECT DISTINCT p.address
+		FROM %s p
+		INNER JOIN %s pa
+		ON p.pool_id=pa.pool_id
+		WHERE p.exchange=$1
+		AND pa.liquidity>=$2
+		`, poolTable, poolassetTable)
+		rows, err = rdb.postgresClient.Query(context.Background(), query, exchange, liquiThreshold)
 	}
-
-	rows, err = rdb.postgresClient.Query(context.Background(), query)
 	if err != nil {
 		return
 	}
@@ -242,7 +281,7 @@ func (rdb *RelDB) GetAllPoolAddrsExchange(exchange string, liquiThreshold float6
 	return
 }
 
-// GetAllPoolAddrsExchange returns all pool addresses available for @exchange.
+// GetAllPoolsExchange returns all pool addresses available for @exchange.
 // Remark that it returns each pool n times where n is the number of assets in the pool.
 func (rdb *RelDB) GetAllPoolsExchange(exchange string, liquiThreshold float64) (pools []dia.Pool, err error) {
 	var (
@@ -251,17 +290,28 @@ func (rdb *RelDB) GetAllPoolsExchange(exchange string, liquiThreshold float64) (
 	)
 
 	query = fmt.Sprintf(`
-		SELECT p.address,a.address,a.blockchain,a.decimals,a.symbol,a.name,pa.token_index
-		FROM %s p 
-		INNER JOIN %s pa 
-		ON p.pool_id=pa.pool_id 
-		INNER JOIN %s a 
+		SELECT exch_pools.address,a.address,a.blockchain,a.decimals,a.symbol,a.name,pa.token_index,pa.liquidity,pa.liquidity_usd
+		FROM (
+			SELECT p.pool_id,p.address, SUM(CASE WHEN pa.liquidity<$1 THEN 1 ELSE 0 END) AS no_liqui
+			FROM %s p
+			INNER JOIN %s pa
+			ON p.pool_id=pa.pool_id
+			WHERE p.exchange=$2
+			GROUP BY p.pool_id,p.address
+			) exch_pools
+		INNER JOIN %s pa
+		ON exch_pools.pool_id=pa.pool_id
+		INNER JOIN %s a
 		ON pa.asset_id=a.asset_id
-		WHERE p.exchange='%s'
-		AND pa.liquidity>=%v
-		`, poolTable, poolassetTable, assetTable, exchange, liquiThreshold)
-
-	rows, err = rdb.postgresClient.Query(context.Background(), query)
+		WHERE exch_pools.no_liqui=0
+		ORDER BY pa.token_index ASC;
+	`,
+		poolTable,
+		poolassetTable,
+		poolassetTable,
+		assetTable,
+	)
+	rows, err = rdb.postgresClient.Query(context.Background(), query, liquiThreshold, exchange)
 	if err != nil {
 		return
 	}
@@ -271,10 +321,12 @@ func (rdb *RelDB) GetAllPoolsExchange(exchange string, liquiThreshold float64) (
 
 	for rows.Next() {
 		var (
-			poolAddress string
-			av          dia.AssetVolume
-			decimals    sql.NullInt64
-			index       sql.NullInt64
+			poolAddress  string
+			av           dia.AssetVolume
+			decimals     sql.NullInt64
+			index        sql.NullInt64
+			liquidity    sql.NullFloat64
+			liquidityUSD sql.NullFloat64
 		)
 		err := rows.Scan(
 			&poolAddress,
@@ -284,6 +336,8 @@ func (rdb *RelDB) GetAllPoolsExchange(exchange string, liquiThreshold float64) (
 			&av.Asset.Symbol,
 			&av.Asset.Name,
 			&index,
+			&liquidity,
+			&liquidityUSD,
 		)
 		if err != nil {
 			log.Error(err)
@@ -293,6 +347,12 @@ func (rdb *RelDB) GetAllPoolsExchange(exchange string, liquiThreshold float64) (
 		}
 		if index.Valid {
 			av.Index = uint8(index.Int64)
+		}
+		if liquidity.Valid {
+			av.Volume = liquidity.Float64
+		}
+		if liquidityUSD.Valid {
+			av.VolumeUSD = liquidityUSD.Float64
 		}
 
 		// map poolasset to pool if pool address already exists.
@@ -309,4 +369,143 @@ func (rdb *RelDB) GetAllPoolsExchange(exchange string, liquiThreshold float64) (
 
 	}
 	return
+}
+
+// GetPoolsByAsset returns all pools with @asset as a pool asset and both assets have liquidity above @liquiThreshold.
+// If @liquidityThresholdUSD>0 AND @liquiThreshold=0, only pools where total liquidity is available
+// AND above @liquidityThresholdUSD are returned.
+func (rdb *RelDB) GetPoolsByAsset(asset dia.Asset, liquidityThreshold float64, liquidityThresholdUSD float64) ([]dia.Pool, error) {
+	var (
+		query string
+		pools []dia.Pool
+	)
+
+	query = fmt.Sprintf(`
+		SELECT exch_pools.exchange,exch_pools.address,a.address,a.blockchain,a.decimals,a.symbol,a.name,pa.token_index,pa.liquidity,pa.liquidity_usd,pa.time_stamp
+		FROM (
+			SELECT p.exchange,p.pool_id,p.address, SUM(CASE WHEN pa.liquidity>=$1 THEN 0 ELSE 1 END) AS no_liqui, SUM(CASE WHEN a.address=$2 THEN 1 ELSE 0 END) AS correct_asset
+			FROM %s p
+			INNER JOIN %s pa
+			ON p.pool_id=pa.pool_id
+			INNER JOIN %s a
+			ON pa.asset_id=a.asset_id
+			WHERE p.blockchain=$3
+			GROUP BY p.exchange,p.pool_id,p.address
+			) exch_pools
+		INNER JOIN %s pa
+		ON exch_pools.pool_id=pa.pool_id
+		INNER JOIN %s a ON pa.asset_id=a.asset_id
+		WHERE exch_pools.no_liqui=0
+		AND exch_pools.correct_asset=1
+		AND pa.time_stamp IS NOT NULL;
+	`,
+		poolTable,
+		poolassetTable,
+		assetTable,
+		poolassetTable,
+		assetTable,
+	)
+	rows, err := rdb.postgresClient.Query(context.Background(), query, liquidityThreshold, asset.Address, asset.Blockchain)
+	if err != nil {
+		return pools, err
+	}
+	defer rows.Close()
+
+	poolIndexMap := make(map[string]int)
+
+	for rows.Next() {
+		var (
+			exchange     string
+			poolAddress  string
+			av           dia.AssetVolume
+			decimals     sql.NullInt64
+			index        sql.NullInt64
+			liquidity    sql.NullFloat64
+			liquidityUSD sql.NullFloat64
+			timestamp    sql.NullTime
+		)
+		err := rows.Scan(
+			&exchange,
+			&poolAddress,
+			&av.Asset.Address,
+			&av.Asset.Blockchain,
+			&decimals,
+			&av.Asset.Symbol,
+			&av.Asset.Name,
+			&index,
+			&liquidity,
+			&liquidityUSD,
+			&timestamp,
+		)
+		if err != nil {
+			log.Error(err)
+		}
+		if decimals.Valid {
+			av.Asset.Decimals = uint8(decimals.Int64)
+		}
+		if index.Valid {
+			av.Index = uint8(index.Int64)
+		}
+		if liquidity.Valid {
+			av.Volume = liquidity.Float64
+		}
+		if liquidityUSD.Valid {
+			av.VolumeUSD = liquidityUSD.Float64
+		}
+
+		// map poolasset to pool if pool address already exists.
+		if _, ok := poolIndexMap[poolAddress]; !ok {
+			// Pool does not exist yet, so initialize.
+			pool := dia.Pool{Exchange: dia.Exchange{Name: exchange}, Address: poolAddress, Blockchain: dia.BlockChain{Name: av.Asset.Blockchain}}
+			if timestamp.Valid {
+				pool.Time = timestamp.Time
+			}
+			pool.Assetvolumes = append(pool.Assetvolumes, av)
+			pools = append(pools, pool)
+			poolIndexMap[poolAddress] = len(pools) - 1
+		} else {
+			// Pool already exists, just add pool asset.
+			pools[poolIndexMap[poolAddress]].Assetvolumes = append(pools[poolIndexMap[poolAddress]].Assetvolumes, av)
+		}
+
+	}
+
+	if liquidityThresholdUSD > 0 {
+		var filteredPools []dia.Pool
+		for _, pool := range pools {
+			totalLiquidity, lowerBound := pool.GetPoolLiquidityUSD()
+			if totalLiquidity > liquidityThresholdUSD && !lowerBound {
+				filteredPools = append(filteredPools, pool)
+			}
+		}
+		return filteredPools, nil
+	}
+
+	return pools, nil
+}
+
+// GetPoolLiquiditiesUSD attempts to fill the field @VolumeUSD by fetching the price
+// of the corresponding asset.
+// @priceCache acts as a poor man's cache for repeated requests.
+func (datastore *DB) GetPoolLiquiditiesUSD(p *dia.Pool, priceCache map[string]float64) {
+	for i, av := range p.Assetvolumes {
+		var price float64
+		// For some pools, for instance on BalancerV2 type contracts, the pool contains itself as an asset.
+		if av.Asset.Address == p.Address {
+			log.Warnf("%s: Pool token %s has the same address as pool itself.", p.Exchange.Name, p.Address)
+			continue
+		}
+		if _, ok := priceCache[av.Asset.Identifier()]; !ok {
+			assetQuotation, err := datastore.GetAssetQuotationLatest(av.Asset, time.Now().Add(-time.Duration(assetQuotationLookbackHours)*time.Hour))
+			if err != nil {
+				log.Errorf("GetAssetQuotationLatest on %s with address %s: %v", av.Asset.Blockchain, av.Asset.Address, err)
+				continue
+			}
+			price = assetQuotation.Price
+			priceCache[av.Asset.Identifier()] = price
+		} else {
+			price = priceCache[av.Asset.Identifier()]
+		}
+		p.Assetvolumes[i].VolumeUSD = price * p.Assetvolumes[i].Volume
+	}
 }

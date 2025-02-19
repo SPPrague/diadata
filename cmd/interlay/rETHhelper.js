@@ -4,9 +4,10 @@ const { createResponse, getPrice } = require("./utils");
 const ethers = require("ethers");
 const bignumber = ethers.BigNumber;
 
+  
 const web3 = new Web3(
   new Web3.providers.HttpProvider(
-    "https://mainnet.infura.io/v3/2883d1b22e0e4d62b535592dd8075fee"
+    process.env.ETHEREUM_NODE_URL || "https://mainnet.infura.io/v3/2883d1b22e0e4d62b535592dd8075fee"
   )
 );
 let abi = [
@@ -211,7 +212,7 @@ async function getValues() {
   totalIssued = totalIssued/1e18
   totalBacked = totalBacked/1e18
  
-  let rethPrice =  ethPrice + (ratio /100 *ethPrice)
+  let rethPrice =  ratio  *ethPrice
 console.log("------------reth--------------",rethPrice)
   return createResponse(totalIssued,totalBacked,rethPrice, ratio)
 }
@@ -281,7 +282,7 @@ async function getActivePool() {
 
     let ratio = totalBacked/totalIssued;
 
-    let rethPrice =  ethPrice + (ratio /100 *ethPrice)
+    let rethPrice =   ratio  *ethPrice;
 
  
 

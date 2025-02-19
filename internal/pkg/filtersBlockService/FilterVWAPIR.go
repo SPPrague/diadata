@@ -6,38 +6,39 @@ import (
 	"time"
 
 	"github.com/diadata-org/diadata/pkg/dia"
+	models "github.com/diadata-org/diadata/pkg/model"
 	log "github.com/sirupsen/logrus"
 )
 
 // FilterVWAP ...
 type FilterVWAPIR struct {
-	exchange    string
-	currentTime time.Time
-	prices      []float64
-	volumes     []float64
-	lastTrade   dia.Trade
-	param       int
-	value       float64
-	modified    bool
-	filterName  string
-	asset       dia.Asset
+	exchange           string
+	currentTime        time.Time
+	prices             []float64
+	volumes            []float64
+	lastTrade          dia.Trade
+	param              int
+	value              float64
+	modified           bool
+	filterName         string
+	asset              dia.Asset
+	nativeDenomination bool
 }
 
-// NewFilterVWAP ...
-func NewFilterVWAPIR(asset dia.Asset, exchange string, currentTime time.Time, param int) *FilterVWAPIR {
+func NewFilterVWAPIR(asset dia.Asset, exchange string, currentTime time.Time, param int, nativeDenomination bool) *FilterVWAPIR {
 	s := &FilterVWAPIR{
-		asset:       asset,
-		exchange:    exchange,
-		prices:      []float64{},
-		volumes:     []float64{},
-		currentTime: currentTime,
-		param:       param,
-		filterName:  "VWAP" + strconv.Itoa(param),
+		asset:              asset,
+		exchange:           exchange,
+		prices:             []float64{},
+		volumes:            []float64{},
+		currentTime:        currentTime,
+		param:              param,
+		filterName:         "VWAPIR" + strconv.Itoa(param),
+		nativeDenomination: nativeDenomination,
 	}
 	return s
 }
 
-// Compute ...
 func (s *FilterVWAPIR) Compute(trade dia.Trade) {
 	s.compute(trade)
 }
@@ -46,7 +47,7 @@ func (filter *FilterVWAPIR) compute(trade dia.Trade) {
 	filter.modified = true
 	if filter.lastTrade != (dia.Trade{}) {
 		if trade.Time.Before(filter.currentTime) {
-			log.Errorln("FilterVWAP: Ignoring Trade out of order ", filter.currentTime, trade.Time)
+			log.Errorln("FilterVWAPIR: Ignoring Trade out of order ", filter.currentTime, trade.Time)
 			return
 		}
 	}
@@ -62,33 +63,40 @@ func (filter *FilterVWAPIR) fill(trade dia.Trade) {
 }
 
 func (filter *FilterVWAPIR) processDataPoint(trade dia.Trade) {
-	filter.prices = append([]float64{trade.EstimatedUSDPrice}, filter.prices...)
+	if !filter.nativeDenomination {
+		filter.prices = append([]float64{trade.EstimatedUSDPrice}, filter.prices...)
+	} else {
+		filter.prices = append([]float64{trade.Price}, filter.prices...)
+	}
 	filter.volumes = append([]float64{trade.Volume}, filter.volumes...)
 }
 
-// FinalCompute ...
 func (s *FilterVWAPIR) FinalCompute(t time.Time) float64 {
 	log.Info("final compute of time ", t)
-	return s.finalCompute()
+	return s.finalCompute(t)
 }
 
-func (s *FilterVWAPIR) finalCompute() float64 {
+func (s *FilterVWAPIR) finalCompute(t time.Time) float64 {
 	if s.lastTrade == (dia.Trade{}) {
 		return 0.0
 	}
 
-	// s.processDataPoint(*s.lastTrade)
+	if len(s.prices) == 0 {
+		return 0.0
+	}
+
+	if len(s.prices) < 2 {
+		s.value = s.prices[0]
+		return s.prices[0]
+	}
 	cleanPrices, bounds := removeOutliers(s.prices)
-
-	priceVolume := []float64{}
-
-	// TODO handle bounds
-	if len(bounds) == 0 {
+	if len(bounds) < 2 {
 		return 0.0
 	}
 
 	cleanedVolumes := s.volumes[bounds[0]:bounds[1]]
 
+	priceVolume := []float64{}
 	for index, price := range cleanPrices {
 		priceVolume = append(priceVolume, price*math.Abs(cleanedVolumes[index]))
 	}
@@ -106,13 +114,17 @@ func (s *FilterVWAPIR) finalCompute() float64 {
 
 	s.value = total / totalVolume
 
+	// Reset filters
+	s.prices = []float64{}
+	s.volumes = []float64{}
+
 	return s.value
 }
 
-// FilterPointForBlock ...
 func (s *FilterVWAPIR) FilterPointForBlock() *dia.FilterPoint {
 	return s.filterPointForBlock()
 }
+
 func (s *FilterVWAPIR) filterPointForBlock() *dia.FilterPoint {
 	if s.exchange != "" {
 		return &dia.FilterPoint{
@@ -128,5 +140,18 @@ func (s *FilterVWAPIR) filterPointForBlock() *dia.FilterPoint {
 			Time:  s.currentTime,
 			Asset: s.asset,
 		}
+	}
+}
+
+func (filter *FilterVWAPIR) save(ds models.Datastore) error {
+	if filter.modified {
+		filter.modified = false
+		err := ds.SetFilter(filter.filterName, filter.asset, filter.exchange, filter.value, filter.currentTime)
+		if err != nil {
+			log.Errorln("FilterVWAPIR: Error:", err)
+		}
+		return err
+	} else {
+		return nil
 	}
 }

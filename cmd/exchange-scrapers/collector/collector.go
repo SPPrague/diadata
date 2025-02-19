@@ -2,7 +2,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"sync"
 	"time"
 
@@ -20,21 +19,35 @@ import (
 var (
 	log                  *logrus.Logger
 	swapTradesOnExchange = []string{
+		dia.AnyswapExchange,
 		dia.CurveFIExchange,
 		dia.CurveFIExchangeFantom,
 		dia.CurveFIExchangeMoonbeam,
 		dia.CurveFIExchangePolygon,
 		dia.CurveFIExchangeArbitrum,
-		dia.PlatypusExchange,
-		dia.WanswapExchange,
-		dia.OmniDexExchange,
 		dia.DiffusionExchange,
-		dia.SolarbeamExchange,
-		dia.AnyswapExchange,
 		dia.HermesExchange,
 		dia.HuckleberryExchange,
+		dia.MaverickExchange,
 		dia.NetswapExchange,
+		dia.OmniDexExchange,
 		dia.OrcaExchange,
+		dia.OsmosisExchange,
+		dia.PlatypusExchange,
+		dia.SolarbeamExchange,
+		dia.TraderJoeExchangeV2_1Avalanche,
+		dia.WanswapExchange,
+		dia.VelodromeExchange,
+		dia.VelodromeSlipstreamExchange,
+		dia.ZenlinkswapExchange,
+		dia.ZenlinkswapExchangeBifrostPolkadot,
+		dia.PearlfiExchangeTestnet,
+		dia.PanCakeSwapExchangeV3,
+		dia.BitflowExchange,
+		dia.VelarExchange,
+		dia.BifrostExchange,
+		dia.HydrationExchange,
+		dia.UniswapExchangeV3Celo,
 	}
 
 	exchange = flag.String("exchange", "", "which exchange")
@@ -108,26 +121,26 @@ func main() {
 		w *kafka.Writer
 		// This topic can be used to forward trades to services other than the prod. tradesblockservice.
 		wReplica *kafka.Writer
-		wTest    *kafka.Writer
 	)
 
 	switch *mode {
 	case "current":
 		w = kafkaHelper.NewWriter(kafkaHelper.TopicTrades)
 		wReplica = kafkaHelper.NewWriter(kafkaHelper.TopicTradesReplica)
-		wTest = kafkaHelper.NewWriter(kafkaHelper.TopicTradesTest)
 	case "estimation":
 		w = kafkaHelper.NewWriter(kafkaHelper.TopicTradesEstimation)
 	case "assetmap":
 		w = kafkaHelper.NewWriter(kafkaHelper.TopicTradesEstimation)
 	}
 
-	defer func() {
-		err := w.Close()
-		if err != nil {
-			log.Error(err)
-		}
-	}()
+	if *mode != "storeTrades" {
+		defer func() {
+			err := w.Close()
+			if err != nil {
+				log.Error(err)
+			}
+		}()
+	}
 
 	wg := sync.WaitGroup{}
 
@@ -154,10 +167,10 @@ func main() {
 		defer wg.Wait()
 
 	}
-	go handleTrades(es.Channel(), &wg, w, wTest, wReplica, ds, *exchange, *mode)
+	go handleTrades(es.Channel(), &wg, w, wReplica, ds, *exchange, *mode)
 }
 
-func handleTrades(c chan *dia.Trade, wg *sync.WaitGroup, w *kafka.Writer, wTest *kafka.Writer, wReplica *kafka.Writer, ds *models.DB, exchange string, mode string) {
+func handleTrades(c chan *dia.Trade, wg *sync.WaitGroup, w *kafka.Writer, wReplica *kafka.Writer, ds *models.DB, exchange string, mode string) {
 	lastTradeTime := time.Now()
 	watchdogDelay := scrapers.Exchanges[exchange].WatchdogDelay
 	if watchdogDelay == 0 {
@@ -189,16 +202,6 @@ func handleTrades(c chan *dia.Trade, wg *sync.WaitGroup, w *kafka.Writer, wTest 
 					log.Error(err)
 				}
 
-				if scrapers.Exchanges[t.Source].Centralized {
-					// Write CEX trades to test Kafka.
-					if mode == "current" {
-						err = writeTradeToKafka(wTest, t)
-						if err != nil {
-							log.Error(err)
-						}
-					}
-				}
-
 				if replicaKafkaTopic == "true" {
 					err := writeTradeToKafka(wReplica, t)
 					if err != nil {
@@ -213,12 +216,14 @@ func handleTrades(c chan *dia.Trade, wg *sync.WaitGroup, w *kafka.Writer, wTest 
 				if err != nil {
 					log.Error(err)
 				}
+				err = ds.Flush()
+				if err != nil {
+					log.Error("Flush Influx in storeTrades mode: ", err)
+				}
 			}
 
 			if mode == "assetmap" {
-
-				fmt.Println("recieved trade", t)
-
+				log.Info("recieved trade", t)
 			}
 		}
 	}

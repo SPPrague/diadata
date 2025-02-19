@@ -31,6 +31,12 @@
             "Address": "0xbf2179859fc6D5BEE9Bf9158632Dc51678a4100e"
         },
         {
+            "Symbol": "ENA",
+            "Exchange": "Bitfinex",
+            "Blockchain": "Ethereum",
+            "Address": "0x57e114B691Db790C35207b2e685D4A43181e6061"
+        },
+        {
             "Symbol": "FIL",
             "Exchange": "Bitfinex",
             "Blockchain": "Filecoin",
@@ -61,10 +67,34 @@
             "Address": "0x8E870D67F660D95d5be530380D0eC0bd388289E1"
         },
         {
+            "Symbol": "POL",
+            "Exchange": "Bitfinex",
+            "Blockchain": "Polygon",
+            "Address": "0x0000000000000000000000000000000000001010"
+        },
+        {
             "Symbol": "SOL",
             "Exchange": "Bitfinex",
             "Blockchain": "Solana",
             "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "TLOS",
+            "Exchange": "Bitfinex",
+            "Blockchain": "Telos",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "TON",
+            "Exchange": "Bitfinex",
+            "Blockchain": "Ton",
+            "Address": "0x0000000000000000000000000000000000000000"
+        },
+        {
+            "Symbol": "UDC",
+            "Exchange": "Bitfinex",
+            "Blockchain": "Ethereum",
+            "Address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
         },
         {
             "Symbol": "UNI",
@@ -83,6 +113,24 @@
             "Exchange": "Bitfinex",
             "Blockchain": "Ethereum",
             "Address": "0xa47c8bf37f92aBed4A126BDA807A7b7498661acD"
+        },
+        {
+            "Symbol": "TIA",
+            "Exchange": "Bitfinex",
+            "Blockchain": "Osmosis",
+            "Address": "ibc/D79E7D83AB399BFFF93433E54FAA480C191248FC556924A2A8351AE2638B3877"
+        },
+        {
+            "Symbol": "VELAR",
+            "Exchange": "Bitfinex",
+            "Blockchain": "Stacks",
+            "Address": "SP1Y5YSTAHZ88XYK1VPDH24GY0HPX5J4JECTMY4A1.velar-token"
+        },
+        {
+            "Symbol": "XAUT",
+            "Exchange": "Bitfinex",
+            "Blockchain": "Ethereum",
+            "Address": "0x68749665FF8D2d112Fa859AA293F07A622782F38"
         },
         {
             "Symbol": "YFI",
